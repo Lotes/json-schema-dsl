@@ -1,3 +1,7 @@
+#ASSUMPTIONS/RULES
+
+null == undefined
+
 #constants (of any defined type)
 const BLOCK_SIZE: integer = 5  
 const LIST: UnboundedIntBlock = [1,2,3]
@@ -22,7 +26,20 @@ annotaion Format(dataType: FormatType, param: integer = 0)
 #any (keyword)
 @Description("Example description")
 typedef AnyDictionary = dictionary of integer => any
-#produces objects like {"1": 1, "2": true, "-3": 1.4, "4": "blubb", "5": {}, "6": []}
+#produces objects like {"0": null, "1": 1, "2": true, "-3": 1.4, "4": "blubb", "5": {}, "6": []}
+
+#not (keyword)
+typedef AnyButNotNull = any not null
+
+typedef AnyButNotPrimitive = any not union {
+	boolean,
+	string,
+	integer,
+	number
+}
+
+typedef A = B not C not D
+#problem: (B not C) not D or B not (C not D), I prefer the last one. + optional use of parenthesis in type definition
 
 #booleans
 typedef RenamedBoolean = boolean
@@ -89,7 +106,7 @@ struct Person {
 	age: NonNegativeInteger
 }
 
-struct Employee: Person { #important: no polymorphism. An array of Person can not contain Employees?
+struct Employee: Person { #important: no polymorphism. An array of Person can not contain Employees!
 	personnelNumber: integer
 	department: string
 }
@@ -119,23 +136,30 @@ struct Message {
 	}
 }
 
-struct Example {
+struct SwitchExample {
 	id: integer
 	switch(id) {
-		case [1..10):      #range, actual range 0..9
-		case 11:           #single value
-		case [-20,-10,12]: #list of values
-		default:           #else case
+		case [1..10):                       #range, actual range 0..9
+		case 11:                            #single value
+		case [-20,-10,12]:                  #list of values
+		case [1..10] or 11 or [-20,-10,12]: #one of the top three cases
+		case [1..5] and 3 and [3,2,1]:      #all of the top three cases
+		case 1 or 2 and 3                   #1 or (2 and 3)
+		default:                            #else case
 	}
 }
 
-#if-then-else
-struct ContainsExample {
-	list: UnboundedIntBlock
-	if(2 in list) {        #tests if list contains element
-	
-	} else {
-	
+#array switch
+struct ArraySwitchExample {
+	list: array of integer
+	array_switch(list) {              #find a better keyword than "array_switch"
+		case 1:                       #list contains 1
+		case [2..4):                  #list contains 2 and 3
+		case [7,-8,9]:                #list contains 7, -8, 9
+		case 1 or [2..4) or [7,-8,9]: #list contains one of the top three cases
+		case 1 and [1..4) and [1,2]:  #list contains all of the top three cases
+		case 1 or 2 and 3             #list contains 1 or (2 and 3)
+		default:                      #else case
 	}
 }
 
@@ -149,13 +173,35 @@ strict struct StrictExample { #strict = other properties than the defined one ar
 #optional properties
 struct Node {
 	content: integer
-	left: Node?
-	right: Node?
+	left: optional Node
+	right: optional Node
 }
-#Type? === NullableType with union NullableType { null, Type }
+#optional Type === NullableType with union NullableType { null, Type }
 
+#inline (unnamed) type definitions
+struct Blakeks {
+	member1: array[0..10] of union {
+		optional string,
+		struct { 
+			a: integer[-100,100], 
+			b: string /blubber/,
+			c: enum { A, B, C },
+			d: all { Type1, Type2, Type3 }
+		}
+	}
+	member2: strict struct { ... }
+}
 
-###
-more expressions for if-then-else? 
-==, !=, <, <=, >, >=, &&, ||, in 
-###
+#DUBIOUS FEATURES
+
+#if-then-else
+struct ContainsExample {
+	list: UnboundedIntBlock
+	if(2 in list) {        #tests if list contains element
+	
+	} else {
+	
+	}
+}
+
+#more expressions for if-then-else: ==, !=, <, <=, >, >=, &&, ||, in... overkill...
