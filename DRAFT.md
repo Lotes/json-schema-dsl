@@ -4,7 +4,7 @@ Constants can be used for definition of annotations and types.
 
 Annotations can be used for describing metadata at type and type property definitions.
 
-The idea is to formulate a DSL and than derive a meta-schema in JSON.
+The idea is to formulate a DSL and then derive a meta-schema in JSON.
 
 #TODO
 
@@ -13,6 +13,7 @@ The idea is to formulate a DSL and than derive a meta-schema in JSON.
 * erase enumerations: `typedef Enum = string /^(VALUE1|VALUE2|VALUE3)$/;`
 
 * extends strings:
+
 ```
 typedef Identifier = string /^[a-zA-Z_][a-zA-Z_0-9]*$/; 
 typedef ShortIdentifier = Identifier[..5];             
@@ -69,17 +70,17 @@ typedef Object = struct {
 
 ## Special types
 
-### "any" type
-
-The "any" type describes any JSON data (including `null`).
-To exclude types use the `not` keyword:
-```
-typedef AnyButNotNull = any not null;
-```
-
 ### "null" type
 
 The "null" type describes the `null` value.
+
+### "any" type
+
+The "any" type describes any JSON data (including `null`).
+To exclude types use the `except` keyword:
+```
+typedef AnyButNotNull = any except null;
+```
 
 ## Primitive types
 
