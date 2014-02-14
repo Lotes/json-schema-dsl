@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/org.openstoryboards.jsonschemadsl/src-gen" editDirectory="/org.openstoryboards.jsonschemadsl.edit/src"
+    editorDirectory="/org.openstoryboards.jsonschemadsl.editor/src" modelPluginID="org.openstoryboards.jsonschemadsl"
+    forceOverwrite="true" modelName="JsonSchemaDsl" updateClasspath="false" rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container"
+    complianceLevel="5.0" copyrightFields="false" editPluginID="org.openstoryboards.jsonschemadsl.edit"
+    editorPluginID="org.openstoryboards.jsonschemadsl.editor" runtimeVersion="2.9">
+  <genPackages prefix="JsonSchemaDsl" basePackage="org.openstoryboards.jsonschemadsl"
+      disposableProviderFactory="true" fileExtensions="jsonschema" ecorePackage="JsonSchemaDsl.ecore#/">
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//TranslationUnit">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//TranslationUnit/definitions"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//Definition">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//Definition/name"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//EnumDefinition">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//EnumDefinition/literals"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//EnumType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//EnumType/literals"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//EnumLiteral">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//EnumLiteral/name"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructDefinition">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructDefinition/abstract"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructDefinition/superType"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructDefinition/body"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructType">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructType/abstract"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructType/superType"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructType/body"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructSuperType">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructSuperType/name"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructBodyDefinition">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructBodyDefinition/members"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructMember">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructMember/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructMember/type"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//TypeDefinition">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//TypeDefinition/type"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//InterfaceDefinition">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//InterfaceDefinition/members"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//InterfaceMember">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//InterfaceMember/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//InterfaceMember/parameters"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//EventMember"/>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//FunctionMember">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//FunctionMember/returnType"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//Parameter">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//Parameter/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//Parameter/type"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//Type"/>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//ParenthesizedType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//ParenthesizedType/type"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//ReferencedType">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//ReferencedType/name"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//NullableType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//NullableType/type"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//DictionaryType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//DictionaryType/keyType"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//DictionaryType/valueType"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//ListType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//ListType/elementType"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//TupleType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//TupleType/types"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//BasicType">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//BasicType/name"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>

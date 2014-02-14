@@ -1,0 +1,11 @@
+
+/.metadata
+/org.openstoryboards.jsonschemadsl/xtend-gen
+/org.openstoryboards.jsonschemadsl/bin
+/org.openstoryboards.jsonschemadsl/src-gen
+/org.openstoryboards.jsonschemadsl.tests/bin
+/org.openstoryboards.jsonschemadsl.tests/src-gen
+/org.openstoryboards.jsonschemadsl.tests/xtend-gen
+/org.openstoryboards.jsonschemadsl.ui/src-gen
+/org.openstoryboards.jsonschemadsl.ui/xtend-gen
+/org.openstoryboards.jsonschemadsl.ui/bin

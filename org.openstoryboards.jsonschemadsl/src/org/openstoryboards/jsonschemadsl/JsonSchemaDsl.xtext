@@ -1,0 +1,142 @@
+grammar org.openstoryboards.jsonschemadsl.JsonSchemaDsl
+hidden(WS, ML_COMMENT, SL_COMMENT)
+ 
+generate jsonSchemaDsl "http://www.openstoryboards.org/jsonschemadsl/JsonSchemaDsl"
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+TranslationUnit:
+	definitions += Definition*;
+	
+Definition:
+	EnumDefinition
+	| TypeDefinition
+	| StructDefinition
+	| InterfaceDefinition
+	;
+
+//=== ENUMERATIONS ===
+EnumDefinition:
+	"enum" name=ID '{' (literals+=EnumLiteral ("," literals+=EnumLiteral)*)? '}'
+	;
+
+EnumType:
+	"enum" "{" (literals+=EnumLiteral ("," literals+=EnumLiteral)*)? "}"
+	;
+
+EnumLiteral:
+	name=ID
+	;
+
+//=== STRUCTS ===
+StructDefinition:
+	(abstract ?= "abstract")? "struct" name=ID (":" superType=StructSuperType)? body=StructBodyDefinition
+	;
+
+StructType:
+	(abstract ?= "abstract")? "struct" (":" superType=StructSuperType)? body=StructBodyDefinition
+	;
+
+StructSuperType:
+	name=ID
+	;
+
+StructBodyDefinition:
+	"{" members+=StructMember* "}"
+	;
+
+StructMember:
+	name=ID ":" type=Type ";"
+	;
+
+//=== TYPEDEFS ===
+TypeDefinition:
+	"typedef" name=ID "=" type=Type
+	;
+	
+//=== INTERFACES ===
+InterfaceDefinition:
+	"interface" name=ID "{" members+=InterfaceMember* "}"
+	;
+
+InterfaceMember:
+	EventMember
+	| FunctionMember
+	;
+
+EventMember:
+	"event" name=ID "(" (parameters+=Parameter ("," parameters+=Parameter)*)? ")" ";"
+	;
+
+FunctionMember:
+	"function" name=ID "(" (parameters+=Parameter ("," parameters+=Parameter)*)? ")" (":" returnType=Type)? ";"
+	;
+	
+Parameter:
+	name=ID ":" type=Type
+	;
+
+//=== TYPES ===
+Type:
+	BasicType
+	| ReferencedType
+	| DictionaryType
+	| ListType
+	| TupleType
+	| NullableType
+	| ParenthesizedType
+	| EnumType 
+	| StructType
+	;
+	
+ParenthesizedType:
+	"(" type=Type ")"
+	; 	
+
+ReferencedType:
+	name=ID
+	;
+
+NullableType:
+	"nullable" type=Type
+	;
+
+DictionaryType:
+	"dictionary" "of" keyType=Type "=>" valueType=Type
+	;
+
+ListType:
+	"list" "of" elementType=Type
+	;
+	
+TupleType:
+	"tuple" "of" "(" (types+=Type ("," types+=Type)*)? ")"
+	;
+
+BasicType:
+	name="integer"
+	| name="string"
+	| name="number"
+	| name="boolean"
+	| name="any"
+	| name="null"
+	| name="identifier"
+	;	
+	
+terminal ID :
+	'^'?('a'..'z'|'A'..'Z'|'_')('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+terminal INT:
+	('0'..'9')+;
+terminal STRING :
+	'"' ( '\\'('b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\') | !('\\'|'"') )* '"';
+	
+terminal ML_COMMENT :
+	'###' -> '###';
+terminal SL_COMMENT :
+	'#' !('\n'|'\r')* ('\r'? '\n')?;
+terminal WS :
+	(' '|'\t'|'\r'|'\n')+;
+ 
+terminal ANY_OTHER:
+	.;
+	
