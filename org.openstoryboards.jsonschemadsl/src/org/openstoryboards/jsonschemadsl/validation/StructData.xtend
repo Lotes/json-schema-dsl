@@ -1,24 +1,16 @@
 package org.openstoryboards.jsonschemadsl.validation
 
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructBodyDefinition
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Definition
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructSuperType
+import org.omg.CORBA.StructMember
+import java.util.List
 
 class StructData {
-	private Definition definition;
-	private boolean isAbstract;
-	private StructSuperType superType;
-	private StructBodyDefinition body;
+	public boolean isAbstract
+	public StructData superType
+	public List<StructMember> members
 	
-	new(Definition definition, boolean isAbstract, StructSuperType superType, StructBodyDefinition body) {
-		this.definition = definition
+	new(boolean isAbstract, StructData superType, List<StructMember> members) {
 		this.isAbstract = isAbstract
 		this.superType = superType
-		this.body = body
+		this.members = members
 	}
-	
-	def getDefinition() { return definition }
-	def getAbstract() { return isAbstract }
-	def	getSuperType() { return superType }
-	def getBody() { return body }
 }

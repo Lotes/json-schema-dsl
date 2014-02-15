@@ -21,7 +21,7 @@ EnumDefinition:
 	;
 
 EnumType:
-	"enum" "{" (literals+=EnumLiteral ("," literals+=EnumLiteral)*)? "}"
+	keyword="enum" "{" (literals+=EnumLiteral ("," literals+=EnumLiteral)*)? "}"
 	;
 
 EnumLiteral:
@@ -30,19 +30,15 @@ EnumLiteral:
 
 //=== STRUCTS ===
 StructDefinition:
-	(abstract ?= "abstract")? "struct" name=ID (":" superType=StructSuperType)? body=StructBodyDefinition
+	(abstract ?= "abstract")? "struct" name=ID (":" superType=StructSuperType)? "{" members+=StructMember* "}"
 	;
 
 StructType:
-	(abstract ?= "abstract")? "struct" (":" superType=StructSuperType)? body=StructBodyDefinition
+	(abstract ?= "abstract")? keyword="struct" (":" superType=StructSuperType)? "{" members+=StructMember* "}"
 	;
 
 StructSuperType:
 	name=ID
-	;
-
-StructBodyDefinition:
-	"{" members+=StructMember* "}"
 	;
 
 StructMember:
@@ -93,15 +89,15 @@ Type:
 	;
 
 IntegerType:
-	"integer" (constraint=Constraint)?
+	keyword="integer" (constraint=Constraint)?
 	;	
 
 NumberType:
-	"number" (constraint=Constraint)?
+	keyword="number" (constraint=Constraint)?
 	;
 
 StringType:
-	"string" (constraint=RegexConstraint)?
+	keyword="string" (constraint=RegexConstraint)?
 	;
 
 RegexConstraint: 
@@ -135,26 +131,25 @@ ReferencedType:
 	;
 
 NullableType:
-	"nullable" type=Type
+	keyword="nullable" type=Type
 	;
 
 DictionaryType:
-	"dictionary" (constraint=Constraint)? "of" keyType=Type "=>" valueType=Type
+	keyword="dictionary" (constraint=Constraint)? "of" keyType=Type "=>" valueType=Type
 	;
 
 ListType:
-	"list" (constraint=Constraint)? "of" elementType=Type
+	keyword="list" (constraint=Constraint)? "of" elementType=Type
 	;
 	
 TupleType:
-	"tuple" "of" "(" (types+=Type ("," types+=Type)*)? ")"
+	keyword="tuple" "of" "(" (types+=Type ("," types+=Type)*)? ")"
 	;
 
 BasicType:
 	name="boolean"
 	| name="any"
 	| name="null"
-	| name="identifier"
 	;	
 	
 terminal ID :

@@ -22,10 +22,9 @@ import java.util.regex.Pattern
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Constraint
 
 class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
-/*
- * unique event & function parameter names
- */
-
+	def error(TypeData typeData, String message) {
+		error(message, typeData.object, typeData.feature)
+	}
 	/*private def getStructs(TranslationUnit unit) {
 		val structs = new HashMap<String, StructData>()
 		for(Definition definition: unit.definitions) {
@@ -94,8 +93,17 @@ class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 				map.put(name, new LinkedList<Definition>())
 			map.get(name).add(definition)				
 		} 
-		//filter unique definitions, throw errors on duplicates
+		
 		val net = new TypeNet()
+		net.onError(TypeNet.ERROR_DICTIONARY_KEY_NOT_STRING, new TypeErrorCallback(this, "Dictionary's key type must be a string type."))
+		net.onError(TypeNet.ERROR_DICTIONARY_KEY_NULLABLE, new TypeErrorCallback(this, "Dictionary's key type can not be null."))
+		net.onError(TypeNet.ERROR_REFERENCED_TYPE_INTERACE, new TypeErrorCallback(this, "Cannot reference an interface in a type definition."))
+		net.onError(TypeNet.ERROR_TYPE_UNKNOWN, new TypeErrorCallback(this, "Unknown type."))
+		net.onError(TypeNet.ERROR_TYPE_CYCLIC_DEPENDENCY, new TypeErrorCallback(this, "Cyclic dependency found."))
+		net.onError(TypeNet.ERROR_STRUCT_SUPER_TYPE_NOT_STRUCT, new TypeErrorCallback(this, "Super type must be a struct type."))
+		net.onError(TypeNet.ERROR_STRUCT_SUPER_TYPE_NULL, new TypeErrorCallback(this, "Super type can not be null."))
+
+		//filter unique definitions, throw errors on duplicates
 		for(String name: map.keySet) {
 			val definitions = map.get(name)
 			if(definitions.size > 1) {
@@ -106,15 +114,8 @@ class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 				net.addDefinition(definitions.get(0))
 			}
 		}
-	
-		//resolve types
-		val graph = net.resolveTypes()
 		
-		//find cyclic inheritance
-		/*for(List<StructData> cyclicComponents: new CycleFinder(graph).findCycles())
-			for(StructData struct: cyclicComponents) {
-				error("Cyclic inheritance found.", struct.definition, JsonSchemaDslPackage.Literals::DEFINITION__NAME)
-			}*/
+		net.resolveTypes()
 	}
 	
 	@Check
