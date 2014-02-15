@@ -87,6 +87,43 @@ Type:
 	| ParenthesizedType
 	| EnumType 
 	| StructType
+	| IntegerType
+	| NumberType
+	| StringType
+	;
+
+IntegerType:
+	"integer" (constraint=Constraint)?
+	;	
+
+NumberType:
+	"number" (constraint=Constraint)?
+	;
+
+StringType:
+	"string" (constraint=RegexConstraint)?
+	;
+
+RegexConstraint: 
+	pattern=REGEX
+	;
+
+NumericConstant:
+	value=INT
+	;
+
+Constraint:
+	left=OpeningBracket from=NumericConstant ("..." to=NumericConstant)? right=ClosingBracket
+	;
+	
+OpeningBracket:
+	bracket="[" 
+	| bracket="("
+	;
+	
+ClosingBracket:
+	bracket="]" 
+	| bracket=")"
 	;
 	
 ParenthesizedType:
@@ -102,11 +139,11 @@ NullableType:
 	;
 
 DictionaryType:
-	"dictionary" "of" keyType=Type "=>" valueType=Type
+	"dictionary" (constraint=Constraint)? "of" keyType=Type "=>" valueType=Type
 	;
 
 ListType:
-	"list" "of" elementType=Type
+	"list" (constraint=Constraint)? "of" elementType=Type
 	;
 	
 TupleType:
@@ -114,10 +151,7 @@ TupleType:
 	;
 
 BasicType:
-	name="integer"
-	| name="string"
-	| name="number"
-	| name="boolean"
+	name="boolean"
 	| name="any"
 	| name="null"
 	| name="identifier"
@@ -125,11 +159,13 @@ BasicType:
 	
 terminal ID :
 	'^'?('a'..'z'|'A'..'Z'|'_')('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
-terminal INT:
-	('0'..'9')+;
+terminal INT returns ecore::EInt:
+	'-'?('0'..'9')+;
 terminal STRING :
 	'"' ( '\\'('b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\') | !('\\'|'"') )* '"';
-	
+terminal REGEX:
+	'/' ( '\\'('.'|'-'|'/') | !('\\'|'/') )* '/';
+		
 terminal ML_COMMENT :
 	'###' -> '###';
 terminal SL_COMMENT :

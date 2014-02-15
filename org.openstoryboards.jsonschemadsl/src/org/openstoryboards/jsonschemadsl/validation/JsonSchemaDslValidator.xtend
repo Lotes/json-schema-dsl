@@ -15,52 +15,22 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructDefinition
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructMember
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TranslationUnit
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EnumType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.InterfaceDefinition
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TypeDefinition
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.RegexConstraint
+import java.util.regex.Pattern
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Constraint
 
 class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
-	@Check
-	def checkTypes(TranslationUnit unit) {
-		/*//collect all definitions
-		val definitions = new HashMap<String, DefinitionData>()
-		for(Definition definition: unit.definitions) {
-			val data = new DefinitionData(definition)
-			definitions.put(definition.name, data)
-			switch(definition) {
-				StructDefinition: data.definitionType = DefinitionType.STRUCT
-				EnumDefinition: data.definitionType = DefinitionType.ENUM
-				InterfaceDefinition: data.definitionType = DefinitionType.INTERFACE
-				TypeDefinition:
-					switch((definition as TypeDefinition).definition) {
-						EnumInlineDefinition: data.definitionType = DefinitionType.ENUM
-						StructInlineDefinition: data.definitionType = DefinitionType.STRUCT
-						BasicType:
-							switch((definition as BasicType).name) {
-								case "integer": data.definitionType = DefinitionType.INTEGER
-								case "string": data.definitionType = DefinitionType.STRING
-								case "number": data.definitionType = DefinitionType.NUMBER
-								case "boolean": data.definitionType = DefinitionType.BOOLEAN
-								case "any": data.definitionType = DefinitionType.ANY
-								case "null": data.definitionType = DefinitionType.NULL
-								case "identifier": data.definitionType = DefinitionType.STRING
-							}
-						DictionaryType: data.definitionType = DefinitionType.DICTIONARY
-						ListType: data.definitionType = DefinitionType.LIST
-						TupleType: data.definitionType = DefinitionType.TUPLE
-						NullableType: data.nullable = true
-					}
-			}
-		}*/
-	}
-	
-	private def getStructs(TranslationUnit unit) {
+/*
+ * unique event & function parameter names
+ */
+
+	/*private def getStructs(TranslationUnit unit) {
 		val structs = new HashMap<String, StructData>()
 		for(Definition definition: unit.definitions) {
 			switch(definition) {
 				StructDefinition: structs.put(definition.name, new StructData(definition, definition.abstract, definition.superType, definition.body))
-				/*TypeDefinition: 
-					if(definition.definition instanceof StructInlineDefinition) {
-						val inline = definition.definition as StructInlineDefinition
-						structs.put(definition.name, new StructData(definition, inline.abstract, inline.superType, inline.body))	
-					}*/
 			}
 		}
 		return structs
@@ -112,10 +82,11 @@ class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 		//check members
 		for(StructData struct: nonCycleStructs)
 			checkStructMembersNotShadowed(struct, structs)
-	}
+	}*/
 	
 	@Check
-	def checkUniqueDefintionNames(TranslationUnit unit) {
+	def checkDefinitions(TranslationUnit unit) {
+		//collect all definitions
 		val map = new HashMap<String, List<Definition>>()
 		for(Definition definition: unit.definitions) {
 			val name = definition.name
@@ -123,13 +94,53 @@ class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 				map.put(name, new LinkedList<Definition>())
 			map.get(name).add(definition)				
 		} 
+		//filter unique definitions, throw errors on duplicates
+		val net = new TypeNet()
 		for(String name: map.keySet) {
 			val definitions = map.get(name)
 			if(definitions.size > 1) {
 				for(Definition definition: definitions) {
 					error("Type names have to be unique", definition, JsonSchemaDslPackage.Literals::DEFINITION__NAME);	
 				}
+			} else {
+				net.addDefinition(definitions.get(0))
 			}
+		}
+	
+		//resolve types
+		val graph = net.resolveTypes()
+		
+		//find cyclic inheritance
+		/*for(List<StructData> cyclicComponents: new CycleFinder(graph).findCycles())
+			for(StructData struct: cyclicComponents) {
+				error("Cyclic inheritance found.", struct.definition, JsonSchemaDslPackage.Literals::DEFINITION__NAME)
+			}*/
+	}
+	
+	@Check
+	public def checkRegex(RegexConstraint constraint) {
+		val pattern = constraint.pattern
+		try {
+			Pattern.compile(pattern.substring(1, pattern.length-1))
+		} catch(Exception ex) {
+			error("Invalid regular expression ("+ex.message+").", constraint, JsonSchemaDslPackage.Literals::REGEX_CONSTRAINT__PATTERN)
+		}
+	}
+	
+	@Check
+	public def checkConstraint(Constraint constraint) {
+		val openLeft = constraint.left.bracket.equals("(")
+		val openRight = constraint.left.bracket.equals(")")
+		val from = constraint.from.value
+		if(constraint.to != null) {
+			val to = constraint.to.value
+			if(from > to)
+				error("Upper limit must be bigger or equal than lower limit.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+			else if(from == to && (openLeft || openRight))
+				error("Constraint results in empty type.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+		} else {
+			if(openLeft || openRight)
+				error("Constraint results in empty type.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
 		}
 	}
 	

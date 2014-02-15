@@ -61,6 +61,33 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//Parameter/type"/>
     </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//Type"/>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//IntegerType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//IntegerType/constraint"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//NumberType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//NumberType/constraint"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StringType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StringType/constraint"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//RegexConstraint">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//RegexConstraint/pattern"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//NumericConstant">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//NumericConstant/value"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//Constraint">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//Constraint/left"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//Constraint/from"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//Constraint/to"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//Constraint/right"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//OpeningBracket">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//OpeningBracket/bracket"/>
+    </genClasses>
+    <genClasses ecoreClass="JsonSchemaDsl.ecore#//ClosingBracket">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//ClosingBracket/bracket"/>
+    </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//ParenthesizedType">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//ParenthesizedType/type"/>
     </genClasses>
@@ -71,10 +98,12 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//NullableType/type"/>
     </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//DictionaryType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//DictionaryType/constraint"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//DictionaryType/keyType"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//DictionaryType/valueType"/>
     </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//ListType">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//ListType/constraint"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//ListType/elementType"/>
     </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//TupleType">
