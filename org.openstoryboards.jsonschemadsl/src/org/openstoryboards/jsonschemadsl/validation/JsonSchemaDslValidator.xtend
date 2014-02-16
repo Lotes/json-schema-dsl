@@ -12,6 +12,9 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EnumLiteral
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.JsonSchemaDslPackage
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.RegexConstraint
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TranslationUnit
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.DictionaryType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ListType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StringType
 
 class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 	def error(TypeData typeData, String message) {
@@ -71,16 +74,34 @@ class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 	public def checkConstraint(Constraint constraint) {
 		val openLeft = constraint.left.bracket.equals("(")
 		val openRight = constraint.left.bracket.equals(")")
-		val from = constraint.from.value
-		if(constraint.to != null) {
-			val to = constraint.to.value
-			if(from > to)
-				error("Upper limit must be bigger or equal than lower limit.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
-			else if(from == to && (openLeft || openRight))
-				error("Constraint results in empty type.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+		val container = constraint.eContainer
+		val isSizeConstraint = container instanceof DictionaryType 
+			|| container instanceof ListType
+			|| container instanceof StringType;
+			
+		if(constraint.from != null) {
+			val from = constraint.from.value
+			if(isSizeConstraint && from < 0)
+				error("Lower limit of size constraint cannot be negative.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)					
+			if(constraint.to != null) {
+				val to = constraint.to.value
+				if(isSizeConstraint && to < 0)
+					error("Upper limit of size constraint cannot be negative.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__TO)
+				if(from > to)
+					error("Upper limit must be bigger or equal than lower limit.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+				else if(from == to && (openLeft || openRight))
+					error("Constraint results in empty type.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+			} else {
+				if(openLeft || openRight)
+					error("Constraint results in empty type.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+			}	
 		} else {
-			if(openLeft || openRight)
-				error("Constraint results in empty type.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__FROM)
+			if(constraint.to != null) {
+				if(isSizeConstraint && constraint.to.value < 0)
+					error("Upper limit of size constraint cannot be negative.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__TO)			
+			} else {
+				error("Empty constraint detected.", constraint, JsonSchemaDslPackage.Literals::CONSTRAINT__LEFT)
+			}
 		}
 	}
 	

@@ -24,6 +24,10 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TranslationUnit
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TupleType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Type
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TypeDefinition
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructDefinition
+import java.util.HashMap
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructMember
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EventMember
 
 class JsonSchemaDslGenerator implements IGenerator {
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
@@ -33,17 +37,30 @@ class JsonSchemaDslGenerator implements IGenerator {
 	}
  
 	def compile(TranslationUnit unit) '''
+	#constraints
 	class RegexConstraint
 		constructor: (@regex) ->
 
 	class IntervalConstraint
 		constructor: (@openLeft, @openRight, @from, @to) ->
 		test: (value) =>
-			#if(@sizeConstraint?)
-			#	if(@sizeConstraint.openLeft)
-			#		if(@sizeConstraint.left?) #TODO
+			if(@from?)
+				if(@openLeft)
+					if(value <= @from)
+						return false
+				else
+					if(value < @from)
+						return false
+			if(@to?)
+				if(@openRight)
+					if(value >= @to)
+						return false
+				else
+					if(value > @to)
+						return false
 			true		
 
+	#base class
 	class Type
 		validate: (object) =>
 			throw new Error("Not implemented validator!")
@@ -164,6 +181,11 @@ class JsonSchemaDslGenerator implements IGenerator {
 				throw new Error("No type assigned to proxy!")
 			@type.validate(object)
 
+	class EventHandler
+		constructor: (@implementation, @parameters) ->
+		run: () =>
+			
+
 	types = {}
 	
 	#enumerations
@@ -182,11 +204,83 @@ class JsonSchemaDslGenerator implements IGenerator {
 	«ENDFOR»
 	
 	#structs
+	«FOR definition: unit.definitions.filter(StructDefinition)»
+	types.«definition.name».setType(«definition.compile»)
+	«ENDFOR»
 	
 	#interfaces
+	«FOR definition: unit.definitions.filter(InterfaceDefinition)»
+	types.«definition.name» = «definition.compile»
+	«ENDFOR»
 	
 	module.exports = types
 	'''
+	
+	def compile(InterfaceDefinition definition) {
+		val name = definition.name
+		'''
+		#BEGIN '«name»' interface
+		class «name»Client
+			constructor: (eventImplementations) ->
+				@eventHandlers = {}
+				«FOR event: definition.members.filter(EventMember)»
+				@eventHandlers.«event.name» = new EventHandler(eventImplementations.«event.name», {
+					«FOR parameter: event.parameters»
+					«parameter.name»: «parameter.type.compile»
+					«ENDFOR»		
+				})
+				«ENDFOR»
+				@callbacks = {}
+			receive: (obj) =>
+				try {
+			        switch(obj.type) {
+						case "functionError":
+							seqNo = obj.sequenceNumber
+							if(!(@callbacks[seqNo]?))
+								return false
+							callback = @callbacks[seqNo]
+							delete @callbacks[seqNo]
+							callback && callback(new Error(obj.errorMessage))
+							return true
+						case "functionReturn":
+							seqNo = obj.sequenceNumber
+							if(!(@callbacks[seqNo]?))
+								return false
+							callback = @callbacks[seqNo]
+							delete @callbacks[seqNo]
+							callback && callback(null, obj["returnValue"])
+							return true
+						case "eventCall":
+							eventName = obj.eventName
+							params = obj.parameters
+							if(!(@eventHandlers[eventName]?))
+								return false
+							@eventHandlers[eventName].run(this, params)
+							return true
+					}
+				} catch(ex) {
+					console.log(ex)
+					return false
+				}
+				false
+
+		class «name»Server
+		
+		types.«name» = {
+			Client: «name»Client,
+			Server: «name»Server,
+		}
+		#END '«name»' interface
+		'''
+	}
+	
+	def compile(StructDefinition definition) {
+		val superType = if(definition.superType != null) '''types.«definition.superType.name»''' else "null"
+		val members = new LinkedList<String>()
+		for(StructMember member: definition.members)
+			members.add(member.name+": "+member.type.compile)
+		'''new StructDefinition("«definition.name»", «definition.abstract», «superType», {«members.join(", ")»})'''
+	}
 	
 	def compile(Constraint constraint) {
 		if(constraint == null)

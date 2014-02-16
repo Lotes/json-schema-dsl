@@ -99,7 +99,7 @@ NumericConstant:
 	;
 
 Constraint:
-	left=OpeningBracket from=NumericConstant ("..." to=NumericConstant)? right=ClosingBracket
+	left=OpeningBracket (from=NumericConstant)? ("..." (to=NumericConstant)?)? right=ClosingBracket
 	;
 	
 OpeningBracket:
