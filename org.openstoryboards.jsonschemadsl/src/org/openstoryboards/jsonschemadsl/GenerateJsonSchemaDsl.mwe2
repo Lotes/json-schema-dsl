@@ -124,6 +124,9 @@ Workflow {
     
     		// provides a compare view
     		fragment = compare.CompareFragment auto-inject {}
+    		
+    		// generate compiler
+    		fragment = generator.GeneratorFragment auto-inject { generateJavaMain = true }
     	}
     }
 }

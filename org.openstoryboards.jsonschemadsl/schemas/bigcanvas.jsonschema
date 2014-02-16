@@ -1,0 +1,63 @@
+typedef Identifier = string /^[a-zA-Z_][a-zA-Z0-9_]*$/
+typedef IdDict = dictionary of Identifier => integer
+
+enum Orientation {
+	HORIZONTAL, VERTICAL
+}
+
+struct Person {
+	name: string;
+	age: number;
+}
+
+struct Student: Person {
+	id: integer;
+}
+
+###
+BIG CANVAS REGION
+###
+
+typedef LayerId = integer[0...5)
+typedef BigInteger = string /^-?[0-9]+$/
+typedef UserId = BigInteger
+typedef BigPoint = tuple of (BigInteger, BigInteger)
+typedef Point = tuple of (integer, integer)
+typedef StrokeOpacity = number[0...1]
+typedef StrokeWidth = integer[1...100]
+typedef Color = string /^#[0-9A-Fa-f]{6}$/
+typedef ActionId = BigInteger
+typedef Selection = nullable string
+typedef TileLocation = tuple of (BigInteger, BigInteger, LayerId) #(col, row, layer)
+struct Region {
+	layer: LayerId;
+	tiles: list of tuple of (BigInteger, BigInteger);
+}
+
+abstract struct Action {}
+abstract struct StrokeAction: Action {
+	selection: Selection;
+	offset: BigPoint;
+	stroke: list of Point;
+	opacity: StrokeOpacity;
+	width: StrokeWidth;
+	layer: LayerId;
+}
+struct EraserAction: StrokeAction {}
+struct BrushAction: StrokeAction {
+	color: Color;
+}
+struct UndoAction: Action {}
+struct RedoAction: Action {}
+
+abstract struct Update {}
+struct ActionUpdate: Update {
+	userId: UserId;
+	action: Action;
+	region: Region;
+}
+
+interface Main {
+	event update(update: Update);
+	function sendAction(action: Action): ActionId;
+}
