@@ -16,10 +16,6 @@
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//EnumDefinition">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//EnumDefinition/literals"/>
     </genClasses>
-    <genClasses ecoreClass="JsonSchemaDsl.ecore#//EnumType">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//EnumType/keyword"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//EnumType/literals"/>
-    </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//EnumLiteral">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//EnumLiteral/name"/>
     </genClasses>
@@ -27,12 +23,6 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructDefinition/abstract"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructDefinition/superType"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructDefinition/members"/>
-    </genClasses>
-    <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructType">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructType/abstract"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructType/keyword"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructType/superType"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StructType/members"/>
     </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//StructSuperType">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StructSuperType/name"/>

@@ -9,7 +9,8 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.BasicType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Definition
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.DictionaryType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EnumDefinition
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EnumType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EventMember
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.FunctionMember
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.IntegerType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.InterfaceDefinition
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.InterfaceMember
@@ -17,17 +18,15 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.JsonSchemaDslPackage
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ListType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.NullableType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.NumberType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Parameter
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ParenthesizedType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ReferencedType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StringType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructDefinition
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructMember
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TupleType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Type
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TypeDefinition
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructMember
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructSuperType
-import org.eclipse.emf.common.util.EList
 
 class TypeNet {
 	public static final String ERROR_DICTIONARY_KEY_NOT_STRING = "dictionary_key_not_string"
@@ -37,10 +36,15 @@ class TypeNet {
 	public static final String ERROR_TYPE_CYCLIC_DEPENDENCY = "cyclic_dependency"
 	public static final String ERROR_STRUCT_SUPER_TYPE_NOT_STRUCT = "struct_super_type_not_struct"
 	public static final String ERROR_STRUCT_SUPER_TYPE_NULL = "struct_super_type_null"
+	public static final String ERROR_STRUCT_MEMBER_NOT_UNIQUE = "struct_member_not_unique"
+	public static final String ERROR_STRUCT_MEMBER_OVERRIDDEN = "struct_member_overridden"
+	public static final String ERROR_INTERFACE_MEMBER_NOT_UNIQUE = "interface_member_not_unique"
+	public static final String ERROR_PARAMETER_NOT_UNIQUE = "parameter_not_unique"
 	
 	private Map<String, List<TypeErrorCallback>> errorCallbacks = new HashMap<String, List<TypeErrorCallback>>()
 	
-	private Map<String, Definition> definitions = new HashMap<String, Definition>();
+	private Map<String, StructData> structs = new HashMap<String, StructData>()
+	private Map<String, Definition> definitions = new HashMap<String, Definition>()
 	private HashMap<EObject, TypeData> objects = new HashMap<EObject, TypeData>()
 	private Graph<TypeData> graph = new Graph<TypeData>()
 	
@@ -83,14 +87,12 @@ class TypeNet {
 					case "any": new TypeData(type, JsonSchemaDslPackage.Literals::BASIC_TYPE__NAME, TypeKind.BOOLEAN, true)
 					case "null": new TypeData(type, JsonSchemaDslPackage.Literals::BASIC_TYPE__NAME, TypeKind.BOOLEAN, true)
 				}
-			StructType: resolveStructType(type as StructType)
 			ReferencedType: resolveReferencedType(type as ReferencedType)
 			DictionaryType: resolveDictionaryType(type as DictionaryType)
 			ListType: resolveListType(type as ListType)
 			TupleType: resolveTupleType(type as TupleType)
 			NullableType: resolveNullableType(type as NullableType)
-			ParenthesizedType: resolveType((type as ParenthesizedType).type)
-			EnumType: new TypeData(type, JsonSchemaDslPackage.Literals::ENUM_TYPE__KEYWORD, TypeKind.ENUM, false)			
+			ParenthesizedType: resolveType((type as ParenthesizedType).type)			
 			IntegerType: new TypeData(type, JsonSchemaDslPackage.Literals::INTEGER_TYPE__KEYWORD, TypeKind.INTEGER, false)
 			NumberType: new TypeData(type, JsonSchemaDslPackage.Literals::NUMBER_TYPE__KEYWORD, TypeKind.NUMBER, false)
 			StringType: new TypeData(type, JsonSchemaDslPackage.Literals::STRING_TYPE__KEYWORD, TypeKind.STRING, false)
@@ -114,7 +116,7 @@ class TypeNet {
 			val referencedTypeData = objects.get(definition)
 			val typeData = new TypeData(referencedTypeData)
 			if(typeData.kind == TypeKind.INTERFACE)
-				triggerError(ERROR_REFERENCED_TYPE_INTERACE, typeData)
+				triggerError(ERROR_REFERENCED_TYPE_INTERACE, new TypeData(type, JsonSchemaDslPackage.Literals::REFERENCED_TYPE__NAME, TypeKind.UNKNOWN, false))
 			graph.addVertex(typeData)
 			graph.addEdge(typeData, referencedTypeData)
 			return typeData	
@@ -159,9 +161,10 @@ class TypeNet {
 		return typeData
 	}
 	
-	private def void resolveStruct(TypeData structTypeData, boolean isAbstract, 
-		StructSuperType superType, List<StructMember> members
-	) {
+	private def void resolveStructDefintion(TypeData structTypeData, StructDefinition definition) { 
+		val superType = definition.superType
+		val members = definition.members
+		
 		//members
 		for(StructMember member: members) {
 			val memberTypeData = resolveType(member.type)
@@ -170,8 +173,8 @@ class TypeNet {
 		//super type
 		if(superType != null) {
 			if(definitions.containsKey(superType.name)){
-				val definition = definitions.get(superType.name)
-				val referencedTypeData = objects.get(definition)
+				val superDefinition = definitions.get(superType.name)
+				val referencedTypeData = objects.get(superDefinition)
 				val typeData = new TypeData(superType, JsonSchemaDslPackage.Literals::STRUCT_SUPER_TYPE__NAME, TypeKind.UNKNOWN, false)
 				if(referencedTypeData.kind != TypeKind.STRUCT)
 					triggerError(ERROR_STRUCT_SUPER_TYPE_NOT_STRUCT, typeData)
@@ -184,41 +187,86 @@ class TypeNet {
 				graph.addEdge(structTypeData, typeData)
 			}
 		}
-		//abstract
-		//TODO
 	}
 	
-	private def TypeData resolveStructType(StructType type) {
-		val structTypeData = new TypeData(type, JsonSchemaDslPackage.Literals::STRUCT_TYPE__KEYWORD, TypeKind.STRUCT, false)
-		graph.addVertex(structTypeData)
-		resolveStruct(structTypeData, type.abstract, type.superType, 
-			type.members
-		)
-		return structTypeData
+	private def checkStructMembers(StructData struct) {
+		//collect members
+		val members = new HashMap<String, List<StructMember>>()
+		for(StructMember member: struct.members) {
+			if(!members.containsKey(member.name))
+				members.put(member.name, new LinkedList<StructMember>())
+			members.get(member.name).add(member)
+		}
+		
+		//check for duplicates
+		for(String name: members.keySet) {
+			val list = members.get(name)
+			if(list.size > 1)
+				for(StructMember member : list)
+					triggerError(ERROR_STRUCT_MEMBER_NOT_UNIQUE, new TypeData(member, JsonSchemaDslPackage.Literals::STRUCT_MEMBER__NAME, TypeKind.UNKNOWN, false))
+		}
+			
+		//check for overridden members
+		var parent = struct.superType
+		while(parent != null && parent != struct) {
+			for(StructMember member: parent.members)	
+				if(members.containsKey(member.name)) {
+					val originals = members.get(member.name)
+					for(StructMember original: originals)
+						triggerError(ERROR_STRUCT_MEMBER_OVERRIDDEN, new TypeData(original, JsonSchemaDslPackage.Literals::STRUCT_MEMBER__NAME, TypeKind.UNKNOWN, false));
+				}
+			parent = parent.superType
+		}
 	}
 	
-	private def resolveStructDefinition(StructDefinition structDefinition) {
-		val structTypeData = objects.get(structDefinition)
-		resolveStruct(structTypeData, structDefinition.abstract, 
-			structDefinition.superType, structDefinition.members
-		)
+	private def checkParameters(List<Parameter> parameters) {
+		val members = new HashMap<String, List<Parameter>>()
+		for(Parameter parameter : parameters) {
+			resolveType(parameter.type)
+			if(!members.containsKey(parameter.name))
+				members.put(parameter.name, new LinkedList<Parameter>())
+			members.get(parameter.name).add(parameter)
+		}
+		
+		for(String name : members.keySet) {
+			val list = members.get(name)
+			if(list.size > 1)
+				for(Parameter member: list)
+					triggerError(ERROR_PARAMETER_NOT_UNIQUE, new TypeData(member, JsonSchemaDslPackage.Literals::PARAMETER__NAME, TypeKind.UNKNOWN, false))
+		}
 	}
 	
 	private def resolveInterface(InterfaceDefinition interfaceDefinition) {
+		val members = new HashMap<String, List<InterfaceMember>>()
 		for(InterfaceMember member : interfaceDefinition.members) {
-			/*switch(member) {
-				EventMember:;			
-				FunctionMember:;
-			}*/
+			if(!members.containsKey(member.name))
+				members.put(member.name, new LinkedList<InterfaceMember>())
+			members.get(member.name).add(member)
+			
+			switch(member) {
+				EventMember: {
+					val event = member as EventMember
+					checkParameters(event.parameters)
+				}			
+				FunctionMember: {
+					val function = member as FunctionMember
+					checkParameters(function.parameters)
+					if(function.returnType != null)
+						resolveType(function.returnType)
+				}
+			}
+		}
+		
+		for(String name : members.keySet) {
+			val list = members.get(name)
+			if(list.size > 1)
+				for(InterfaceMember member: list)
+					triggerError(ERROR_INTERFACE_MEMBER_NOT_UNIQUE, new TypeData(member, JsonSchemaDslPackage.Literals::INTERFACE_MEMBER__NAME, TypeKind.UNKNOWN, false))
 		}
 	}
 	
 	def resolveTypes() {
-		//TODO find cycles
-		//TODO structs: find member overridden
-		//TODO structs: unique member names
 		//TODO interfaces: unique parameter names
-		//TODO no interface reference as type
 		
 		//visit all types
 		try {
@@ -227,7 +275,11 @@ class TypeNet {
 				graph.addVertex(object)
 				switch(definition) {
 					TypeDefinition: resolveTypeDefinition(definition as TypeDefinition)
-					StructDefinition: resolveStructDefinition(definition as StructDefinition)
+					StructDefinition: {
+						val structDef = definition as StructDefinition
+						resolveStructDefintion(object, structDef)
+						structs.put(definition.name, new StructData(structDef, structDef.abstract, structDef.members))
+					}
 					InterfaceDefinition: resolveInterface(definition as InterfaceDefinition)
 				}
 			}		
@@ -246,5 +298,15 @@ class TypeNet {
 		for(List<TypeData> group: cycleGroups)
 			for(TypeData typeData: group)
 				triggerError(ERROR_TYPE_CYCLIC_DEPENDENCY, typeData)
+				
+		//check structs
+		for(StructData struct : structs.values)
+			if(struct.definition.superType != null) {
+				val superName = struct.definition.superType.name
+				if(structs.containsKey(superName)) //missing super type was detected before
+					struct.superType = structs.get(superName)
+			}
+		for(StructData struct : structs.values)
+			checkStructMembers(struct)
 	}
 }

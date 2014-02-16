@@ -20,10 +20,6 @@ EnumDefinition:
 	"enum" name=ID '{' (literals+=EnumLiteral ("," literals+=EnumLiteral)*)? '}'
 	;
 
-EnumType:
-	keyword="enum" "{" (literals+=EnumLiteral ("," literals+=EnumLiteral)*)? "}"
-	;
-
 EnumLiteral:
 	name=ID
 	;
@@ -31,10 +27,6 @@ EnumLiteral:
 //=== STRUCTS ===
 StructDefinition:
 	(abstract ?= "abstract")? "struct" name=ID (":" superType=StructSuperType)? "{" members+=StructMember* "}"
-	;
-
-StructType:
-	(abstract ?= "abstract")? keyword="struct" (":" superType=StructSuperType)? "{" members+=StructMember* "}"
 	;
 
 StructSuperType:
@@ -81,8 +73,6 @@ Type:
 	| TupleType
 	| NullableType
 	| ParenthesizedType
-	| EnumType 
-	| StructType
 	| IntegerType
 	| NumberType
 	| StringType

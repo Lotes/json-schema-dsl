@@ -1,11 +1,11 @@
 package org.openstoryboards.jsonschemadsl.validation
 
-import java.util.LinkedList
-import java.util.HashSet
-import java.util.Stack
-import java.util.List
 import java.util.HashMap
+import java.util.LinkedList
+import java.util.List
 import java.util.Map
+import java.util.Stack
+import org.eclipse.xtext.xbase.lib.Pair
 
 class CycleFinder<Elem> {
 	private Graph<Elem> graph;
@@ -26,7 +26,7 @@ class CycleFinder<Elem> {
         groups
 	}
 
-	private def tarjan(List<List<Elem>> groups, Map<Elem, Pair<Integer, Integer>> annotations, Stack<Elem> S, List<Elem> U, Elem v) {
+	private def void tarjan(List<List<Elem>> groups, Map<Elem, Pair<Integer, Integer>> annotations, Stack<Elem> S, List<Elem> U, Elem v) {
 		//v -> (dfs, lowlink)
 		annotations.put(v, new Pair<Integer,Integer>(maxdfs, maxdfs))
 		maxdfs = maxdfs + 1      // Zähler erhöhen

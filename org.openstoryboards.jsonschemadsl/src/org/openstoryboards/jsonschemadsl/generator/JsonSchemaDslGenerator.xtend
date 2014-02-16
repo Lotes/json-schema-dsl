@@ -17,12 +17,140 @@ class JsonSchemaDslGenerator implements IGenerator {
 	}
  
 	def compile(TranslationUnit unit) '''
-		«FOR definition: unit.definitions»
-		«definition.compile»
-		«ENDFOR»
-	'''
+	class RegexConstraint
+		constructor: (@regex) ->
+
+	class IntervalConstraint
+		constructor: (@openLeft, @openRight, @from, @to) ->
+		test: (value) =>
+			#if(@sizeConstraint?)
+			#	if(@sizeConstraint.openLeft)
+			#		if(@sizeConstraint.left?) #TODO
+			true		
+
+	class Type
+		validate: (object) =>
+			throw new Error("Not implemented validator!")
+
+	#basic types
+	class BooleanType extends Type
+		validate: (object) =>
+			typeof(object) === "boolean"
+
+	class AnyType extends Type
+		validate: (object) =>
+			true
+
+	class NullType extends Type
+		validate: (object) =>
+			object === null
 	
-	def compile(Definition definition) '''
-		«definition.name»
+	class EnumType extends Type
+		maxValue: 0
+		constructor: (values) ->
+			index = 0
+			maxValue = values.length
+			for value in values
+				this[value] = index++
+		validate: (object)
+			typeof(object) == "number" && Math.floor(object) == object && object < maxValue
+
+	class NumberType extends Type
+		constructor: (@constraint) ->
+		validate: (object) =>
+			typeof(object) == "number" && (!(@constraint?) || @constraint.test(object))
+
+	class IntegerType extends NumberType 
+		validate: (object) =>
+			super(object) && Math.floor(object) == object
+
+	class StringType extends Type
+		constructor: (@sizeConstraint, @regexConstraint) ->
+		validate: (object) =>
+			if(typeof(object) !== "string")
+				return false
+			if(@regexConstraint?)
+				if(!@regexConstraint.regex.test(object))
+					return false
+			(!(@sizeConstraint?) || @sizeConstraint.test(object.length))
+
+	#composite types
+	class NullableType extends Type
+		constructor: (@type) ->
+		validate: (object) =>
+			object == null || @type.validate(object)
+
+	class DictionaryType extends Type
+		constructor: (@keyType, @valueType, @sizeConstraint) ->
+		validate: (object) =>
+			if(typeof(object)!="object")
+				return false
+			size = 0
+			for key, value of object
+				size++
+				if(!@keyType.validate(key))
+					return false
+				if(!valueType.validate(value))
+					return false
+			(!(@sizeConstraint?) || @sizeConstraint.test(size))
+
+	class ListType extends Type
+		constructor: (@elementType, @sizeConstraint) ->
+		validate: (object) =>
+			if(!Array.isArray(object))
+				return false
+			for value in object
+				if(!elementType.validate(value))
+					return false
+			(!(@sizeConstraint?) || @sizeConstraint.test(object.length))
+
+	class TupleType extends Type
+		constructor: (@tupleTypes) ->
+		validate: (object) =>
+			if(!Array.isArray(object))
+				return false
+			if(@tupleTypes.length != object.length)
+				return false
+			index = 0
+			for tupleType in @tupleTypes
+				value = object[index++]
+				if(!tupleType.validate(value))
+					return false
+			true
+
+	class StructType extends Type		
+		constructor: (@name, @isAbstract, @superType, @members) ->
+		validate: (object, isSubClass) =>
+			if(typeof(object) !== "object")
+				return false
+			if(typeof(isSubClass) == "boolean" && isSubClass)
+				if(@isAbstract)
+					return false
+			else
+				if(object["$type"] !== @name)
+					return false
+			if(@superType? && !@superType.validate(object, true))
+				return false
+			for name, type of @members
+				if(!object[name]?)
+					return false
+				if(type.validate(object[name]))
+					return false
+			true
+
+	class ProxyType extends Type
+		constructor: -> @type = null
+		setType: (@type) =>
+		validate: (object) =>
+			if(@type === null)
+				throw new Error("No type assigned to proxy!")
+			@type.validate(object)
+
+	types = {}
+	«FOR definition: unit.definitions»
+	types.«definition.name» = new ProxyType()
+	«ENDFOR»
+	«FOR definition: unit.definitions»
+	«ENDFOR»
 	'''
 }

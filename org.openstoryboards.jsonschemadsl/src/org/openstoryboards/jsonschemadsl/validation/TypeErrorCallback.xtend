@@ -1,7 +1,5 @@
 package org.openstoryboards.jsonschemadsl.validation
 
-import org.eclipse.emf.ecore.EObject
-
 class TypeErrorCallback {
 	private JsonSchemaDslValidator validator
 	private String message
