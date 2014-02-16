@@ -61,6 +61,7 @@
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//StringType">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//StringType/keyword"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StringType/constraint"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference JsonSchemaDsl.ecore#//StringType/regexConstraint"/>
     </genClasses>
     <genClasses ecoreClass="JsonSchemaDsl.ecore#//RegexConstraint">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute JsonSchemaDsl.ecore#//RegexConstraint/pattern"/>

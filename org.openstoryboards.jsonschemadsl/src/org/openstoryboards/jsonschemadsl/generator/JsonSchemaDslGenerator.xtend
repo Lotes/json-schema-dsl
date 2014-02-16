@@ -3,11 +3,27 @@
  */
 package org.openstoryboards.jsonschemadsl.generator
 
+import java.util.LinkedList
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
-import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Definition
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.BasicType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Constraint
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.DictionaryType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EnumDefinition
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.IntegerType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.InterfaceDefinition
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ListType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.NullableType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.NumberType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ParenthesizedType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.ReferencedType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.RegexConstraint
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StringType
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TranslationUnit
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TupleType
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.Type
+import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.TypeDefinition
 
 class JsonSchemaDslGenerator implements IGenerator {
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
@@ -45,7 +61,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		validate: (object) =>
 			object === null
 	
-	class EnumType extends Type
+	class EnumerationType extends Type
 		maxValue: 0
 		constructor: (values) ->
 			index = 0
@@ -60,7 +76,9 @@ class JsonSchemaDslGenerator implements IGenerator {
 		validate: (object) =>
 			typeof(object) == "number" && (!(@constraint?) || @constraint.test(object))
 
-	class IntegerType extends NumberType 
+	class IntegerType extends NumberType
+		constructor: (constraint) -> 
+			super(constraint)
 		validate: (object) =>
 			super(object) && Math.floor(object) == object
 
@@ -147,10 +165,82 @@ class JsonSchemaDslGenerator implements IGenerator {
 			@type.validate(object)
 
 	types = {}
-	«FOR definition: unit.definitions»
+	
+	#enumerations
+	«FOR enumDefinition: unit.definitions.filter(EnumDefinition)»
+	types.«enumDefinition.name» = new EnumerationType([«enumDefinition.literals.map[lit | "\""+lit.name+"\""].join(", ")»])
+	«ENDFOR»
+	
+	#proxies
+	«FOR definition: unit.definitions.filter[d | !(d instanceof EnumDefinition || d instanceof InterfaceDefinition)]»
 	types.«definition.name» = new ProxyType()
 	«ENDFOR»
-	«FOR definition: unit.definitions»
+	
+	#typedefs
+	«FOR definition: unit.definitions.filter(TypeDefinition)»
+	types.«definition.name».setType(«definition.type.compile»)
 	«ENDFOR»
+	
+	#structs
+	
+	#interfaces
+	
+	module.exports = types
 	'''
+	
+	def compile(Constraint constraint) {
+		if(constraint == null)
+			return "null"
+		val openLeft = constraint.left.bracket.equals("(")
+		val openRight = constraint.right.bracket.equals(")")
+		val from = if(constraint.from != null) constraint.from.value else null
+		val to = if(constraint.to != null) constraint.to.value else null
+		'''new IntervalConstraint(«openLeft», «openRight», «from», «to»)'''
+	}
+	def compile(RegexConstraint constraint) {
+		if(constraint == null)
+			return "null"
+		'''new RegexConstraint(«constraint.pattern»)'''
+	}
+	
+	def String compile(Type type) {
+		switch(type) {
+			//basic types
+			BasicType:
+				switch((type as BasicType).name) {
+					case "boolean": '''new BooleanType()'''
+					case "any": '''new AnyType()'''
+					case "null": '''new NullType()'''
+				}
+			IntegerType: '''new IntegerType(«(type as IntegerType).constraint.compile»)'''
+			NumberType: '''new NumberType(«(type as NumberType).constraint.compile»)'''
+			StringType: '''new StringType(«(type as StringType).constraint.compile», «(type as StringType).regexConstraint.compile»)'''
+			
+			//composite types
+			NullableType: '''new NullableType(«(type as NullableType).type.compile»)'''
+			DictionaryType: {
+				val dictionary = type as DictionaryType 
+				val key = dictionary.keyType.compile
+				val value = dictionary.valueType.compile
+				val constraint = dictionary.constraint.compile
+				'''new DictionaryType(«key», «value», «constraint»)'''
+			}
+			ListType: {
+				val list = type as ListType 
+				val element = list.elementType.compile
+				val constraint = list.constraint.compile
+				'''new ListType(«element», «constraint»)'''
+			}
+			TupleType: {
+				val tuple = type as TupleType 
+				val list = new LinkedList<String>()
+				for(Type tupleType : tuple.types)
+					list.add(tupleType.compile)
+				'''new TupleType([«list.join(",")»])'''
+			}
+			
+			ParenthesizedType: (type as ParenthesizedType).type.compile
+			ReferencedType: '''types.«(type as ReferencedType).name»'''
+		}	
+	}
 }

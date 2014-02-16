@@ -39,6 +39,8 @@ class JsonSchemaDslValidator extends AbstractJsonSchemaDslValidator {
 		net.onError(TypeNet.ERROR_STRUCT_SUPER_TYPE_NULL, new TypeErrorCallback(this, "Super type can not be null."))
 		net.onError(TypeNet.ERROR_STRUCT_MEMBER_NOT_UNIQUE, new TypeErrorCallback(this, "Struct member is not unique."))
 		net.onError(TypeNet.ERROR_STRUCT_MEMBER_OVERRIDDEN, new TypeErrorCallback(this, "Struct member overrides super member."))
+		net.onError(TypeNet.ERROR_INTERFACE_MEMBER_NOT_UNIQUE, new TypeErrorCallback(this, "Interface member name have to be unique."));
+		net.onError(TypeNet.ERROR_PARAMETER_NOT_UNIQUE, new TypeErrorCallback(this, "Parameter names have to be unique."));
 
 		//filter unique definitions, throw errors on duplicates
 		for(String name: map.keySet) {

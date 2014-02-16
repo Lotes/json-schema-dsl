@@ -87,7 +87,7 @@ NumberType:
 	;
 
 StringType:
-	keyword="string" (constraint=RegexConstraint)?
+	keyword="string" (constraint=Constraint)? (regexConstraint=RegexConstraint)?
 	;
 
 RegexConstraint: 
