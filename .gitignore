@@ -9,3 +9,5 @@
 /org.openstoryboards.jsonschemadsl.ui/src-gen
 /org.openstoryboards.jsonschemadsl.ui/xtend-gen
 /org.openstoryboards.jsonschemadsl.ui/bin
+/jsonschemadsl-compiler.jar
+/org.openstoryboards.jsonschemadsl/schemas/bigcanvas.coffee
