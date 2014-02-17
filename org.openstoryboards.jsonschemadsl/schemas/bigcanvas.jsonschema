@@ -1,21 +1,5 @@
-typedef Identifier = string /^[a-zA-Z_][a-zA-Z0-9_]*$/
-typedef IdDict = dictionary of Identifier => integer
-
-enum Orientation {
-	HORIZONTAL, VERTICAL
-}
-
-struct Person {
-	name: string;
-	age: number;
-}
-
-struct Student: Person {
-	id: integer;
-}
-
 ###
-BIG CANVAS REGION
+BIG CANVAS
 ###
 
 typedef LayerId = integer[0...5)
