@@ -30,7 +30,8 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.FunctionMember
 class JsonSchemaDslGenerator implements IGenerator {	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 		for(tu: resource.allContents.toIterable.filter(TranslationUnit)) {
-			val fileName = resource.URI.toString.replace(".jsonschema", ".coffee")
+			val uri = resource.URI.toString
+			val fileName = uri.substring(0, uri.length - ".jsonschema".length) + ".coffee"
 			fsa.generateFile(fileName, tu.compile)
 			System.out.println("generated '"+fileName+"'.")
 		}

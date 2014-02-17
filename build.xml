@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project org.openstoryboards.jsonschemadsl">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="C:/Data/Projekte/workspace/jsonschemadsl-compiler.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="org.openstoryboards.jsonschemadsl.generator.Main"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="C:/Data/Projekte/workspace/org.openstoryboards.jsonschemadsl/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtext_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.ecore.xmi_2.9.1.v20130827-0309.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.ecore_2.9.1.v20130827-0309.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.common_2.9.1.v20130827-0309.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.antlr.runtime_3.2.0.v201101311130.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/com.google.inject_3.0.0.v201203062045.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/com.google.inject.assistedinject_3.0.0.v20130529-1354.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/com.google.inject.multibindings_3.0.0.v20130529-1354.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.mwe.core_1.2.1.v201312110307.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.apache.commons.cli_1.2.0.v201105210650.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.mwe2.runtime_2.5.0.v201312110307.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.mwe.utils_1.3.1.v201312110307.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtext.util_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/com.google.guava_10.0.1.v201203051515.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/javax.inject_1.0.0.v20091030.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtext.xbase_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtext.common.types_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.jdt.annotation_1.1.0.v20130513-1648.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtend.lib_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtext.xbase.lib_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtext.generator_2.5.0.v201312110906.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtend_1.4.0.v201306110406.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/com.ibm.icu_50.1.1.v201304230130.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xpand_1.4.0.v201306110406.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.xtend.typesystem.emf_1.4.0.v201306110406.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.codegen.ecore_2.9.1.v20131212-0558.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.codegen_2.9.0.v20131212-0558.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/de.itemis.xtext.antlr_2.1.0.v201308291703.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.antlr.generator_3.2.0.v201308291703.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.mwe2.lib_2.5.0.v201312110307.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.mwe2.launch_2.5.0.v201312110944.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.eclipse.emf.mwe2.language_2.5.0.v201312110944.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/Portable Programs/eclipse-xtext/plugins/org.apache.log4j_1.2.15.v201012070815.jar"/>
+        </jar>
+    </target>
+</project>

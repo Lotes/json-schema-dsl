@@ -194,8 +194,8 @@ valid value for "Employee":
 ###
 ```
 
-Attention: Don't forget the polymorphism! A list of `Person` can also contain a list of `Employee`!
-Internally a field named `$type` will be inserted to identify the type.
+Attention: Don't forget the polymorphism! A list of `Person` can also contain an `Employee`!
+Internally a field named `$type` will be inserted to identify the struct type.
 
 Abstract struct should not be instantiated. If you try to validate against an abstract struct an exception will be thrown.
 
