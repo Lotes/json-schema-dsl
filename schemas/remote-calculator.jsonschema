@@ -1,0 +1,6 @@
+typedef Matrix = list[3] of list[3] of number
+
+interface Main {
+	event multiplied(lhs: Matrix, rhs: Matrix, result: Matrix);
+	function multiply(lhs: Matrix, rhs: Matrix): Matrix;
+}

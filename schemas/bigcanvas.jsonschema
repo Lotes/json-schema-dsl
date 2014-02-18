@@ -59,7 +59,7 @@ struct HistoryUpdate: TileUpdate {
 
 ### USERS ###
 typedef UserId = BigInteger
-typedef UserName = string[1..40]
+typedef UserName = string[1...40]
 struct UserInfo {
 	id: UserId;
 	name: UserName;

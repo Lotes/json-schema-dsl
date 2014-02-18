@@ -28,10 +28,12 @@ import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EventMember
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.FunctionMember
 
 class JsonSchemaDslGenerator implements IGenerator {	
+	//TODO pass sub struct types to struct type by name
+	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 		for(tu: resource.allContents.toIterable.filter(TranslationUnit)) {
 			val uri = resource.URI.toString
-			val fileName = uri.substring(0, uri.length - ".jsonschema".length) + ".coffee"
+			val fileName = uri.substring(0, uri.lastIndexOf(".")) + ".coffee"
 			fsa.generateFile(fileName, tu.compile)
 			System.out.println("generated '"+fileName+"'.")
 		}
@@ -182,7 +184,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 				throw new Error("No type assigned to proxy!")
 			@type.validate(object)
 
-	class EventHandler
+	class ClientEventHandler
 		constructor: (@name, @implementation, @parameters) ->
 		run: (object, parameters) =>
 			index = 0
@@ -196,7 +198,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 			else
 				throw new Error("Please implement event '"+@name+"'.")
 
-	class FunctionHandler
+	class ServerFunctionHandler
 		constructor: (@name, @implementation, @parameters, @returnType) ->
 		run: (object, parameters) =>
 			index = 0
@@ -221,7 +223,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		receive: (socket, obj) =>
 			try
 				switch obj.type
-					when "functionCall":
+					when "functionCall"
 						seqNo = obj.sequenceNumber
 						fname = obj.functionName
 						params = obj.parameters;
@@ -251,6 +253,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		constructor:  ->
 			@eventHandlers = {}
 			@callbacks = {}
+			@sequenceNumber = 0
 		receive: (obj) =>
 			try
 				switch obj.type
@@ -306,7 +309,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 	
 	#interfaces
 	«FOR definition: unit.definitions.filter(InterfaceDefinition)»
-	types.«definition.name» = «definition.compile»
+	«definition.compile»
 	«ENDFOR»
 	
 	module.exports = types
@@ -320,26 +323,45 @@ class JsonSchemaDslGenerator implements IGenerator {
 			constructor: (functionImplementations) ->
 				super()
 				«FOR function: definition.members.filter(FunctionMember)»
-				@functionHandlers.«function.name» = new FunctionHandler("«function.name»", functionImplementations.«function.name», {
+				@functionHandlers.«function.name» = new ServerFunctionHandler("«function.name»", functionImplementations.«function.name», {
 					«FOR parameter: function.parameters»
 					«parameter.name»: «parameter.type.compile»
 					«ENDFOR»		
 				}, «if(function.returnType == null) "null" else function.returnType.compile »)
 				«ENDFOR»
+			«FOR event: definition.members.filter(EventMember)»
+			«event.name»: (socket, «event.parameters.map[p|p.name].join(", ")») =>
+			«ENDFOR»
 		
 		class «name»Client extends Client
-			constructor: (eventImplementations) ->
+			constructor: (eventImplementations, @send) ->
 				super()
 				«FOR event: definition.members.filter(EventMember)»
-				@eventHandlers.«event.name» = new EventHandler("«event.name»", eventImplementations.«event.name», {
+				@eventHandlers.«event.name» = new ClientEventHandler("«event.name»", eventImplementations.«event.name», {
 					«FOR parameter: event.parameters»
 					«parameter.name»: «parameter.type.compile»
 					«ENDFOR»		
 				})
 				«ENDFOR»
 			«FOR function: definition.members.filter(FunctionMember)»
-			«function.name»: («function.parameters.map[p|p.name].join(", ")») =>
+			«function.name»: («function.parameters.map[p|p.name].join(", ")», callback) =>
+				if(arguments.length != «function.parameters.size + 1»
+					|| typeof(arguments[«function.parameters.size»]) != "function"
+				) throw new Error("Usage: function «function.name»(«function.parameters.map[p|p.name].join(", ")», callback)")
 				
+				seqNo = @sequenceNumber++
+				paramsList = []
+				«IF function.parameters.size > 0»
+				for i in [1..«function.parameters.size»]
+					paramsList.push(arguments[i-1])
+				«ENDIF»
+				@callbacks[seqNo] = arguments[«function.parameters.size»]
+				@send({
+					type: "functionCall",
+					sequenceNumber: seqNo,
+					functionName: "«function.name»",
+					parameters: paramsList
+				})
 			«ENDFOR»
 		
 		types.«name» = {
