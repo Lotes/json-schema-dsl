@@ -63,10 +63,21 @@ class JsonSchemaDslGenerator implements IGenerator {
 						return false
 			true		
 
+	#validation helper
+	class ValidationError
+		constructor: (@path, @message) ->
+		
+	class ValidationResult
+		constructor: ->
+			@errors = []
+			@ok = true
+		addError: (path, message) =>
+			@errors.push(new ValidationError(path, message))
+			@ok = false
+
 	#base class
 	class Type
 		validate: (object) =>
-			throw new Error("Not implemented validator!")
 
 	#basic types
 	class BooleanType extends Type
@@ -197,6 +208,9 @@ class JsonSchemaDslGenerator implements IGenerator {
 				@implementation.apply(object, parameters)
 			else
 				throw new Error("Please implement event '"+@name+"'.")
+
+	class ClientFunctionHandler
+		constructor: (@name, @parameters, @returnType) ->
 
 	class ServerFunctionHandler
 		constructor: (@name, @implementation, @parameters, @returnType) ->
