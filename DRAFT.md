@@ -1,4 +1,4 @@
-This document describes a DSL (domain specific language) for defining a JSON data schema. A schema contains definitions of types and interface (for remote procedure calls).
+This document describes a DSL (domain specific language) for defining a JSON data schema. A schema contains definitions of types and interfaces (for remote procedure calls).
 
 #Assumptions
 
@@ -223,3 +223,22 @@ possible Node value:
 }
 ###
 ```
+
+## Interfaces
+
+An interface defines a remote procedure protocol. Interfaces can contain functions and events.
+
+```
+interface Main {
+	function add(a: integer, b: integer): integer;
+	event added(a: integer, b: integer, result: integer);
+}
+```
+
+### Functions
+
+Functions are remote procedure calls of the client to the server. The client sends a set of parameters to the server, the server processes the request and sends an optional return value to the client.
+
+### Events
+
+Events are messages of the server to the client. They can send a set of parameters. Events have no return type.
