@@ -26,43 +26,35 @@ import java.util.HashMap
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.StructMember
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.EventMember
 import org.openstoryboards.jsonschemadsl.jsonSchemaDsl.FunctionMember
+import java.util.Set
+import java.util.HashSet
+import java.util.Map
 
 class JsonSchemaDslGenerator implements IGenerator {	
-	//TODO pass sub struct types to struct type by name
+	private val typesModuleName = "JsonSchemaTypes.generated"
+	private val typesModuleFileName = typesModuleName + ".coffee"
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
+		val uri = resource.URI.toString.replace("\\", "/")
+		
+		//generated types file
+		val typesFileName = 
+			if(uri.lastIndexOf("/") > -1)
+				uri.substring(0, uri.lastIndexOf("/")) + "/" + typesModuleFileName
+			else
+				typesModuleFileName
+		fsa.generateFile(typesFileName, typesModule())
+		System.out.println("generated '"+typesFileName+"'")
+		
+		//generate schema file
+		val fileName = uri.substring(0, uri.lastIndexOf(".")) + ".coffee"
 		for(tu: resource.allContents.toIterable.filter(TranslationUnit)) {
-			val uri = resource.URI.toString
-			val fileName = uri.substring(0, uri.lastIndexOf(".")) + ".coffee"
 			fsa.generateFile(fileName, tu.compile)
 			System.out.println("generated '"+fileName+"'.")
 		}
 	}
- 
-	def compile(TranslationUnit unit) '''
-	#constraints
-	class RegexConstraint
-		constructor: (@regex) ->
-
-	class IntervalConstraint
-		constructor: (@openLeft, @openRight, @from, @to) ->
-		test: (value) =>
-			if(@from?)
-				if(@openLeft)
-					if(value <= @from)
-						return false
-				else
-					if(value < @from)
-						return false
-			if(@to?)
-				if(@openRight)
-					if(value >= @to)
-						return false
-				else
-					if(value > @to)
-						return false
-			true		
-
+	
+	private def typesModule() '''
 	#validation helper
 	class ValidationError
 		constructor: (@path, @message) ->
@@ -70,202 +62,294 @@ class JsonSchemaDslGenerator implements IGenerator {
 	class ValidationResult
 		constructor: ->
 			@errors = []
-			@ok = true
-		addError: (path, message) =>
+		ok: => !@hasErrors()
+		hasErrors: => @errors.length > 0
+		addError: (path, message) => 
 			@errors.push(new ValidationError(path, message))
-			@ok = false
+		addResult: (result) =>
+			for error in result.errors
+				@errors.push(error)
+	
+	#constraints
+	class RegexConstraint
+		constructor: (@regex) ->
+		validate: (str, path) =>
+			result = new ValidationResult()
+			if(!@regex.test(str))
+				result.addError(path, "String '"+str+"' does not match regular expression constraint.")
+			result
+			
+
+	class IntervalConstraint
+		constructor: (@openLeft, @openRight, @from, @to) ->
+		validate: (value, path) =>
+			result = new ValidationResult()
+			if(@from?)
+				if(@openLeft)
+					if(value <= @from)
+						result.addError(path, "Value "+value+" goes below or equal the lower limit "+@from+".")
+				else
+					if(value < @from)
+						result.addError(path, "Value "+value+" goes below the lower limit "+@from+".")
+			if(@to?)
+				if(@openRight)
+					if(value >= @to)
+						result.addError(path, "Value "+value+" goes above or equal the upper limit "+@to+".")
+				else
+					if(value > @to)
+						result.addError(path, "Value "+value+" goes above the upper limit "+@to+".")
+			result
 
 	#base class
 	class Type
-		validate: (object) =>
+		constructor: ->
+		validate: (object, path) =>
 
 	#basic types
 	class BooleanType extends Type
-		validate: (object) =>
-			typeof(object) == "boolean"
+		constructor: ->
+		validate: (object, path) =>
+			result = new ValidationResult()
+			if(typeof(object) != "boolean")
+				result.addError(path, "Value is not a boolean as required.");
+			result
 
 	class AnyType extends Type
-		validate: (object) =>
-			true
+		constructor: ->
+		validate: (object, path) => #no error possible, every value is allowed
+			new ValidationResult()
 
 	class NullType extends Type
-		validate: (object) =>
-			object == null
+		constructor: ->
+		validate: (object, path) =>
+			result = new ValidationResult()
+			if(object != null)
+				result.addError(path, "Value is not null as required.")
+			result
 	
 	class EnumerationType extends Type
 		maxValue: 0
-		constructor: (values) ->
+		constructor: (values) -> 
 			index = 0
 			maxValue = values.length
 			for value in values
 				this[value] = index++
-		validate: (object) =>
-			typeof(object) == "number" && Math.floor(object) == object && object < maxValue
+		validate: (object, path) =>
+			result = new ValidationResult()
+			if(typeof(object) != "number" || Math.floor(object) != object)
+				result.addError(path, "Value is not an integer as required.")
+			else if(object < 0 || object >= maxValue)
+				result.addError(path, "Enumeration value lies not in interval [0, "+maxValue+").")
+			result
 
 	class NumberType extends Type
-		constructor: (@constraint) ->
-		validate: (object) =>
-			typeof(object) == "number" && (!(@constraint?) || @constraint.test(object))
+		constructor: (@constraint) -> 
+		validate: (object, path) =>
+			result = new ValidationResult()
+			if(typeof(object) != "number")
+				result.addError(path, "Value is not numeric as required.")
+			else if(@constraint?)
+				result.addResult(@constraint.validate(object, path))
+			result
 
 	class IntegerType extends NumberType
 		constructor: (constraint) -> 
 			super(constraint)
-		validate: (object) =>
-			super(object) && Math.floor(object) == object
+		validate: (object, path) =>
+			result = new ValidationResult()
+			result.addResult(super(object, path)) 
+			if(!result.hasErrors() && Math.floor(object) != object)
+				result.addError(path, "Value is not an integer as required.")
+			result
 
 	class StringType extends Type
 		constructor: (@sizeConstraint, @regexConstraint) ->
-		validate: (object) =>
+		validate: (object, path) =>
+			result = new ValidationResult()
 			if(typeof(object) != "string")
-				return false
-			if(@regexConstraint?)
-				if(!@regexConstraint.regex.test(object))
-					return false
-			(!(@sizeConstraint?) || @sizeConstraint.test(object.length))
+				result.addError(path, "Value is not a string as required.")
+			else if(@regexConstraint?)
+				result.addResult(@regexConstraint.validate(object, path))
+			if(@sizeConstraint?)
+				result.addResult(@sizeConstraint.validate(object.length), path+"#length")
+			result
 
 	#composite types
 	class NullableType extends Type
 		constructor: (@type) ->
-		validate: (object) =>
-			object == null || @type.validate(object)
+		validate: (object, path) =>
+			result = new ValidationResult()
+			if(object != null)
+				result.addResult(@type.validate(object, path))
+			result
 
 	class DictionaryType extends Type
 		constructor: (@keyType, @valueType, @sizeConstraint) ->
-		validate: (object) =>
+		validate: (object, path) =>
+			result = new ValidationResult()
 			if(typeof(object)!="object")
-				return false
+				result.addError(path, "Value is not an object as required.")
+				return result
 			size = 0
 			for key, value of object
 				size++
-				if(!@keyType.validate(key))
-					return false
-				if(!valueType.validate(value))
-					return false
-			(!(@sizeConstraint?) || @sizeConstraint.test(size))
+				result.addResult(@keyType.validate(key, path+".<"+key+">"))
+				result.addResult(@valueType.validate(value, path+"."+key))
+			if(@sizeConstraint?) 
+				result.addResult(@sizeConstraint.validate(size, path+"#length"))
+			result
 
 	class ListType extends Type
 		constructor: (@elementType, @sizeConstraint) ->
-		validate: (object) =>
+		validate: (object, path) =>
+			result = new ValidationResult()
 			if(!Array.isArray(object))
-				return false
-			for value in object
-				if(!elementType.validate(value))
-					return false
-			(!(@sizeConstraint?) || @sizeConstraint.test(object.length))
+				result.addError(path, "Value is not an array as required.");
+				return result
+			for value, index in object
+				result.addResult(@elementType.validate(value, path+"["+index+"]"))
+			if(@sizeConstraint?)
+				result.addResult(@sizeConstraint.validate(object.length, path+"#length"))
+			result
 
 	class TupleType extends Type
 		constructor: (@tupleTypes) ->
-		validate: (object) =>
+		validate: (object, path) =>
+			result = new ValidationResult()
 			if(!Array.isArray(object))
-				return false
+				result.addError(path, "Value is not an array as required.")
+				return result
 			if(@tupleTypes.length != object.length)
-				return false
+				result.addError(path, "Tuple must contain exactly "+@tupleTypes.length+" values.")
+				return result
 			index = 0
 			for tupleType in @tupleTypes
 				value = object[index++]
-				if(!tupleType.validate(value))
-					return false
-			true
+				result.addResult(tupleType.validate(value), path+"["+index+"]")
+			result
 
 	class StructType extends Type		
-		constructor: (@name, @isAbstract, @superType, @members) ->
-		validate: (object, isSubClass) =>
+		constructor: (@name, @isAbstract, @members, @subStructs) ->
+		validate: (object, path) =>
+			result = new ValidationResult()
 			if(typeof(object) != "object")
-				return false
-			if(typeof(isSubClass) == "boolean" && isSubClass)
-				if(@isAbstract)
-					return false
+				result.addError(path, "Value is not an object as required.")
+				return result
+			typeName = object["$type"]
+			if(typeName != @name)
+				if(@subStructs[typeName]?)
+					result.addResult(@subStructs[typeName].validate(object, path))
+				else
+					result.addError(path, "Object has unknown struct type '"+typeName+"'.")
 			else
-				if(object["$type"] != @name)
-					return false
-			if(@superType? && !@superType.validate(object, true))
-				return false
-			for name, type of @members
-				if(!object[name]?)
-					return false
-				if(type.validate(object[name]))
-					return false
-			true
+				if(@isAbstract)
+					result.addError(path, "Cannot instantiate object of abstract struct type '"+typeName+"'.")
+				for name, type of @members
+					if(!object[name]?)
+						result.addError(path+"."+name, "Field is not defined.")
+					else 
+						result.addResult(type.validate(object[name], path+"."+name))
+			result
 
 	class ProxyType extends Type
 		constructor: -> @type = null
 		setType: (@type) =>
-		validate: (object) =>
+		validate: (object, path) =>
+			result = new ValidationResult()
 			if(@type == null)
-				throw new Error("No type assigned to proxy!")
-			@type.validate(object)
+				result.addError(path, "No type assigned to proxy.")
+			else
+				result.addResult(@type.validate(object, path))
+			result
 
-	class ClientEventHandler
-		constructor: (@name, @implementation, @parameters) ->
-		run: (object, parameters) =>
+	class EventHandler
+		constructor: (@name, @parameters) ->
+		validateParameters: (parameters) =>
+			result = new ValidationResult()
 			index = 0
 			for name, type of @parameters
 				value = parameters[index]
-				if(!type.validate(value))
-					throw new Error("Event '"+@name+" received bad message format ("+(index+1)+". parameter '"+name+"'): "+JSON.stringify(value))
+				result.addResult(type.validate(value, @name+"()#parameter"+index))
 				index++
-			if(@implementation?)
-				@implementation.apply(object, parameters)
+			result
+		run: (implementation, object, parameters) =>
+			if(implementation?)
+				implementation.apply(object, parameters)
 			else
 				throw new Error("Please implement event '"+@name+"'.")
 
-	class ClientFunctionHandler
-		constructor: (@name, @parameters, @returnType) ->
-
-	class ServerFunctionHandler
-		constructor: (@name, @implementation, @parameters, @returnType) ->
-		run: (object, parameters) =>
-			index = 0
-			for name, type of @parameters
-				value = parameters[index]
-				if(!type.validate(value))
-					throw new Error("Function '"+@name+" received bad message format ("+(index+1)+". parameter '"+name+"'): "+JSON.stringify(value))
-				index++
-			if(@implementation?)
-				returnValue = @implementation.apply(object, parameters)
-				if(@returnType? && !@returnType.validate(returnValue))
-					throw new Error("Function call of '"+@name+"' return bad message format: "+JSON.stringify(returnValue))
-				return returnValue
+	class FunctionHandler extends EventHandler
+		constructor: (name, parameters, @returnType) ->
+			super(name, parameters)
+		validateReturnValue: (returnValue) =>
+			@returnType.validate(returnValue, @name+"()#returnValue")
+		run: (implementation, object, parameters) =>
+			if(implementation?)
+				implementation.apply(object, parameters)
 			else
 				throw new Error("Please implement function '"+@name+"'.")
 	
-	class Socket
-	
-	class Server
-		constructor: ->
-			@functionHandlers = {}
+	class Stub
+		constructor: (@eventHandlers, @functionHandlers, @implementations) ->
+			@send = implementations.send
+
+	class ServerStub extends Stub
+		constructor: (events, functions, implementations) ->
+			super(events, functions, implementations)
 		receive: (socket, obj) =>
+			if(!(@send?))
+				throw new Error("Please implement function send(socketId, object).")
 			try
 				switch obj.type
 					when "functionCall"
 						seqNo = obj.sequenceNumber
-						fname = obj.functionName
-						params = obj.parameters;
-						params.unshift(socket);
-						params.push((err, result) ->
-							if(err) 
-								answer = {
-									type: "functionError",
-									sequenceNumber: seqNo,
-									errorMessage: err.message
-								} 
-							else 
-								answer = {
-									type: "functionReturn",
-									sequenceNumber: seqNo,
-									returnValue: result
-								}
-							socket.send(answer)
-						)
-						@functionHandlers[fname].run(this, params)
-						true
+						try
+							fname = obj.functionName
+							handler = @functionHandlers[fname]
+							params = obj.parameters;
+							
+							validationResult = handler.validateParameters(params)
+							if(!validationResult.ok())
+								first = validationResult.errors[0]
+								throw new Error("Bad format at '"+first.path+"': "+first.message)
+							
+							params.unshift(socket);
+							params.push((err, result) =>
+								if(err) 
+									@send(socket, {
+										type: "functionError",
+										sequenceNumber: seqNo,
+										errorMessage: err.message
+									})
+								else
+									validationResult = handler.validateReturnValue(result)
+									if(validationResult.ok())
+										@send(socket, {
+											type: "functionReturn",
+											sequenceNumber: seqNo,
+											returnValue: result
+										})
+									else
+										first = validationResult.errors[0];
+										@send(socket, {
+											type: "functionError",
+											sequenceNumber: seqNo,
+											errorMessage: "Bad format at '"+first.path+"': "+first.message
+										})
+							)
+							handler.run(@implementations[fname], this, params)
+						catch innerException
+							@send(socket, {
+								type: "functionError",
+								sequenceNumber: seqNo,
+								errorMessage: innerException.message
+							})
 			catch ex
-				return false
-			return false
+				console.log("server error: "+ex.message)
 	
-	class Client
-		constructor:  ->
-			@eventHandlers = {}
+	class ClientStub extends Stub
+		constructor: (events, functions, implementations) ->
+			super(events, functions, implementations)
 			@callbacks = {}
 			@sequenceNumber = 0
 		receive: (obj) =>
@@ -274,95 +358,189 @@ class JsonSchemaDslGenerator implements IGenerator {
 					when "functionError"
 						seqNo = obj.sequenceNumber
 						if(!(@callbacks[seqNo]?))
-							return false
+							console.log("client error: unhandled message: "+JSON.stringify(obj))
+							return
 						callback = @callbacks[seqNo]
 						delete @callbacks[seqNo]
 						callback && callback(new Error(obj.errorMessage))
-						return true
 					when "functionReturn"
 						seqNo = obj.sequenceNumber
 						if(!(@callbacks[seqNo]?))
-							return false
+							console.log("client error: unhandled message: "+JSON.stringify(obj))
+							return
 						callback = @callbacks[seqNo]
 						delete @callbacks[seqNo]
 						callback && callback(null, obj["returnValue"])
-						return true
 					when "eventCall"
 						eventName = obj.eventName
 						params = obj.parameters
 						if(!(@eventHandlers[eventName]?))
-							return false
-						@eventHandlers[eventName].run(this, params)
-						return true
+							return
+						@eventHandlers[eventName].run(@implementations[eventName], this, params)
 			catch ex
-				console.log(ex)
-				return false
-			false
+				console.log(ex.message)
 	
-	types = {}
-	
-	#enumerations
-	«FOR enumDefinition: unit.definitions.filter(EnumDefinition)»
-	types.«enumDefinition.name» = new EnumerationType([«enumDefinition.literals.map[lit | "\""+lit.name+"\""].join(", ")»])
-	«ENDFOR»
-	
-	#proxies
-	«FOR definition: unit.definitions.filter[d | !(d instanceof EnumDefinition || d instanceof InterfaceDefinition)]»
-	types.«definition.name» = new ProxyType()
-	«ENDFOR»
-	
-	#typedefs
-	«FOR definition: unit.definitions.filter(TypeDefinition)»
-	types.«definition.name».setType(«definition.type.compile»)
-	«ENDFOR»
-	
-	#structs
-	«FOR definition: unit.definitions.filter(StructDefinition)»
-	types.«definition.name».setType(«definition.compile»)
-	«ENDFOR»
-	
-	#interfaces
-	«FOR definition: unit.definitions.filter(InterfaceDefinition)»
-	«definition.compile»
-	«ENDFOR»
-	
-	module.exports = types
+	module.exports = {
+		RegexConstraint: RegexConstraint,
+		IntervalConstraint: IntervalConstraint, 
+		ValidationError: ValidationError,
+		ValidationResult: ValidationResult,
+		
+		Type: Type,
+		BooleanType: BooleanType,
+		AnyType: AnyType,
+		NullType: NullType,
+		EnumerationType: EnumerationType,
+		NumberType: NumberType,
+		IntegerType: IntegerType,
+		StringType: StringType,
+		NullableType: NullableType,
+		DictionaryType: DictionaryType,
+		ListType: ListType,
+		TupleType: TupleType,
+		StructType: StructType,
+		ProxyType: ProxyType,
+		
+		EventHandler: EventHandler,
+		FunctionHandler: FunctionHandler,
+
+		ServerStub: ServerStub,
+		ClientStub: ClientStub
+	}
 	'''
+ 
+	def compile(TranslationUnit unit) {
+		val structs = new HashMap<String, StructDefinition>()
+		val structMembers = new HashMap<String, Set<StructMember>>();
+		val subStructs = new HashMap<String, Set<String>>()
+		val definitions = unit.definitions.filter(StructDefinition)
+		for(StructDefinition struct: definitions) {
+			structs.put(struct.name, struct)
+			subStructs.put(struct.name, new HashSet<String>())
+			subStructs.get(struct.name).add(struct.name)
+			structMembers.put(struct.name, new HashSet<StructMember>())	
+		}
+		for(StructDefinition struct: definitions) {
+			val subName = struct.name
+			val members = structMembers.get(subName)
+			var current = struct
+			while(current != null) {
+				val superName = current.superType.name
+				subStructs.get(superName).add(subName)
+				for(StructMember member: current.members)	
+					members.add(member)
+				current = if(current.superType != null) structs.get(current.superType.name) else null
+			}
+		}
+		'''
+		common = require("./«typesModuleName»")
+		RegexConstraint = common.RegexConstraint
+		IntervalConstraint = common.IntervalConstraint
+		ValidationError = common.ValidationError
+		ValidationResult = common.ValidationResult
+		
+		Type = common.Type
+		BooleanType = common.BooleanType
+		AnyType = common.AnyType
+		NullType = common.NullType
+		EnumerationType = common.EnumerationType
+		NumberType = common.NumberType
+		IntegerType = common.IntegerType
+		StringType = common.StringType
+		NullableType = common.NullableType
+		DictionaryType = common.DictionaryType
+		ListType = common.ListType
+		TupleType = common.TupleType
+		StructType = common.StructType
+		ProxyType = common.ProxyType
+		
+		EventHandler = common.EventHandler
+		FunctionHandler = common.FunctionHandler
+		ServerStub = common.ServerStub
+		ClientStub = common.ClientStub
+		
+		types = {}
+		
+		#enumerations
+		«FOR enumDefinition: unit.definitions.filter(EnumDefinition)»
+		types.«enumDefinition.name» = new EnumerationType([«enumDefinition.literals.map[lit | "\""+lit.name+"\""].join(", ")»])
+		«ENDFOR»
+		
+		#proxies
+		«FOR definition: unit.definitions.filter[d | !(d instanceof EnumDefinition || d instanceof InterfaceDefinition)]»
+		types.«definition.name» = new ProxyType()
+		«ENDFOR»
+		
+		#typedefs
+		«FOR definition: unit.definitions.filter(TypeDefinition)»
+		types.«definition.name».setType(«definition.type.compile»)
+		«ENDFOR»
+		
+		#structs
+		«FOR definition: unit.definitions.filter(StructDefinition)»
+		types.«definition.name».setType(«compile(definition, structMembers.get(definition.name), subStructs.get(definition.name))»)
+		«ENDFOR»
+		
+		#interfaces
+		«FOR definition: unit.definitions.filter(InterfaceDefinition)»
+		«definition.compile»
+		«ENDFOR»
+		
+		module.exports = types
+		'''
+	}
 	
 	def compile(InterfaceDefinition definition) {
 		val name = definition.name
 		'''
 		#BEGIN '«name»' interface
-		class «name»Server extends Server
-			constructor: (functionImplementations) ->
-				super()
-				«FOR function: definition.members.filter(FunctionMember)»
-				@functionHandlers.«function.name» = new ServerFunctionHandler("«function.name»", functionImplementations.«function.name», {
-					«FOR parameter: function.parameters»
-					«parameter.name»: «parameter.type.compile»
-					«ENDFOR»		
-				}, «if(function.returnType == null) "null" else function.returnType.compile »)
-				«ENDFOR»
+		«name»EventHandlers = {}
+		«FOR event: definition.members.filter(EventMember)»
+		«name»EventHandlers.«event.name» = new EventHandler("«event.name»", {
+			«FOR parameter: event.parameters»
+			«parameter.name»: «parameter.type.compile»
+			«ENDFOR»		
+		})
+		«ENDFOR»
+
+		«name»FunctionHandlers = {}
+		«FOR function: definition.members.filter(FunctionMember)»
+		«name»FunctionHandlers.«function.name» = new FunctionHandler("«function.name»", {
+			«FOR parameter: function.parameters»
+			«parameter.name»: «parameter.type.compile»
+			«ENDFOR»		
+		}, «if(function.returnType == null) "null" else function.returnType.compile»)
+		«ENDFOR»
+
+		class «name»ServerStub extends ServerStub
+			constructor: (implementations) ->
+				super(«name»EventHandlers, «name»FunctionHandlers, implementations)
 			«FOR event: definition.members.filter(EventMember)»
 			«event.name»: (socket, «event.parameters.map[p|p.name].join(", ")») =>
+				if(!(@send?))
+					throw new Error("Please implement function 'send(socket, object)'.")
+				if(arguments.length != «event.parameters.size + 1») 
+					throw new Error("Usage: event «event.name»(socket, «event.parameters.map[p|p.name].join(", ")»)")
+				parameters = [«event.parameters.map[p|p.name].join(", ")»]
+				result = @eventHandlers["«event.name»"].validateParameters(parameters)
+				if(!result.ok())
+					throw new Error("Bad format at '"+result[0].path+"': "+result[0].message);
+				@send(socket, {
+					type: "eventCall",
+					eventName: "«event.name»",
+					parameters: parameters
+				})
 			«ENDFOR»
 		
-		class «name»Client extends Client
-			constructor: (eventImplementations, @send) ->
-				super()
-				«FOR event: definition.members.filter(EventMember)»
-				@eventHandlers.«event.name» = new ClientEventHandler("«event.name»", eventImplementations.«event.name», {
-					«FOR parameter: event.parameters»
-					«parameter.name»: «parameter.type.compile»
-					«ENDFOR»		
-				})
-				«ENDFOR»
+		class «name»ClientStub extends ClientStub
+			constructor: (implementations) ->
+				super(«name»EventHandlers, «name»FunctionHandlers, implementations)
 			«FOR function: definition.members.filter(FunctionMember)»
 			«function.name»: («function.parameters.map[p|p.name].join(", ")», callback) =>
-				if(arguments.length != «function.parameters.size + 1»
-					|| typeof(arguments[«function.parameters.size»]) != "function"
-				) throw new Error("Usage: function «function.name»(«function.parameters.map[p|p.name].join(", ")», callback)")
-				
+				if(!(@send?))
+					throw new Error("Please implement function 'send(object)'.")
+				if(arguments.length != «function.parameters.size + 1» || typeof(arguments[«function.parameters.size»]) != "function") 
+					throw new Error("Usage: function «function.name»(«function.parameters.map[p|p.name].join(", ")», callback)")
 				seqNo = @sequenceNumber++
 				paramsList = []
 				«IF function.parameters.size > 0»
@@ -379,19 +557,18 @@ class JsonSchemaDslGenerator implements IGenerator {
 			«ENDFOR»
 		
 		types.«name» = {
-			Client: «name»Client,
-			Server: «name»Server,
+			ClientStub: «name»ClientStub,
+			ServerStub: «name»ServerStub,
 		}
 		#END '«name»' interface
 		'''
 	}
 	
-	def compile(StructDefinition definition) {
-		val superType = if(definition.superType != null) '''types.«definition.superType.name»''' else "null"
+	def compile(StructDefinition definition, Set<StructMember> structMembers, Set<String> subStructs) {
 		val members = new LinkedList<String>()
-		for(StructMember member: definition.members)
+		for(StructMember member: structMembers)
 			members.add(member.name+": "+member.type.compile)
-		'''new StructDefinition("«definition.name»", «definition.abstract», «superType», {«members.join(", ")»})'''
+		'''new StructDefinition("«definition.name»", «definition.abstract», {«members.join(", ")»}, {«subStructs.map[s|s+": types."+s].join(",")»})'''
 	}
 	
 	def compile(Constraint constraint) {
@@ -403,6 +580,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		val to = if(constraint.to != null) constraint.to.value else null
 		'''new IntervalConstraint(«openLeft», «openRight», «from», «to»)'''
 	}
+	
 	def compile(RegexConstraint constraint) {
 		if(constraint == null)
 			return "null"

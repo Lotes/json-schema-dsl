@@ -2,20 +2,23 @@ var schema = require("./remote-calculator");
 var MainInterface = schema.Main;
 
 //setup
-var client = new MainInterface.Client({
-	connect: function() {},
-	disconnect: function() {},
+var client = new MainInterface.ClientStub({
+	//route outgoing messages to the server
 	send: function(object) { server.receive(0, object); },
+	//event implementations
 	multiplied: function(lhs, rhs, result) {
 		console.log("someone multiplied two matrices...");
 	}
 });
 
-var server = new MainInterface.Server({
-	connect: function(socketId) {},
-	disconnect: function(socketId) {},
+var server = new MainInterface.ServerStub({
+	//route outgoing messages to a client
 	send: function(socketId, object) { client.receive(object); },
+	//function implementations
 	multiply: function(socketId, lhs, rhs, callback) {
+		console.log("server: incoming multiply request...");
+		console.log("server: lhs="+JSON.stringify(lhs));
+		console.log("server: rhs="+JSON.stringify(rhs));
 		var result = [
 			[0,0,0],
 			[0,0,0],
@@ -26,7 +29,9 @@ var server = new MainInterface.Server({
 		    for(var k=0; k<3; k++)
 				result[i][j] += lhs[i][k] * rhs[k][j];
 		callback(null, result);
-		this.muliplied(socketId, lhs, rhs, result);
+		console.log("server: multiply request callback...");
+		this.multiplied(socketId, lhs, rhs, result);
+		console.log("server: multiply request succeeded...");
 	}
 });
 
@@ -44,7 +49,7 @@ var b = [
 
 client.multiply(a, b, function(err, result) {
 	if(err)
-		console.log("ERROR: "+err.message);
+		console.log("client: error: "+err.message);
 	else
-		console.log(result);
+		console.log("client: result="+JSON.stringify(result));
 });
