@@ -526,7 +526,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 				parameters = [«event.parameters.map[p|p.name].join(", ")»]
 				result = @eventHandlers["«event.name»"].validateParameters(parameters)
 				if(!result.ok())
-					throw new Error("Bad format at '"+result[0].path+"': "+result[0].message);
+					throw new Error("Bad format at '"+result.errors[0].path+"': "+result.errors[0].message)
 				@send(socket, {
 					type: "eventCall",
 					eventName: "«event.name»",
@@ -543,19 +543,25 @@ class JsonSchemaDslGenerator implements IGenerator {
 					throw new Error("Please implement function 'send(object)'.")
 				if(arguments.length != «function.parameters.size + 1» || typeof(arguments[«function.parameters.size»]) != "function") 
 					throw new Error("Usage: function «function.name»(«function.parameters.map[p|p.name].join(", ")», callback)")
-				seqNo = @sequenceNumber++
+			
 				paramsList = []
 				«IF function.parameters.size > 0»
 				for i in [1..«function.parameters.size»]
 					paramsList.push(arguments[i-1])
 				«ENDIF»
-				@callbacks[seqNo] = arguments[«function.parameters.size»]
-				@send({
-					type: "functionCall",
-					sequenceNumber: seqNo,
-					functionName: "«function.name»",
-					parameters: paramsList
-				})
+				
+				result = @functionHandlers["«function.name»"].validateParameters(paramsList)
+				if(!result.ok())
+					callback(new Error("Bad format at '"+result.errors[0].path+"': "+result.errors[0].message))
+				else
+					seqNo = @sequenceNumber++
+					@callbacks[seqNo] = arguments[«function.parameters.size»]
+					@send({
+						type: "functionCall",
+						sequenceNumber: seqNo,
+						functionName: "«function.name»",
+						parameters: paramsList
+					})
 			«ENDFOR»
 		
 		types.«name» = {
@@ -570,7 +576,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		val members = new LinkedList<String>()
 		for(StructMember member: structMembers)
 			members.add(member.name+": "+member.type.compile)
-		'''new StructDefinition("«definition.name»", «definition.abstract», {«members.join(", ")»}, {«subStructs.map[s|s+": types."+s].join(",")»})'''
+		'''new StructType("«definition.name»", «definition.abstract», {«members.join(", ")»}, {«subStructs.map[s|s+": types."+s].join(",")»})'''
 	}
 	
 	def compile(Constraint constraint) {
