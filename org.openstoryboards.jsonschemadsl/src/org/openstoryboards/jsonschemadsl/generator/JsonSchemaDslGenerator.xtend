@@ -425,10 +425,12 @@ class JsonSchemaDslGenerator implements IGenerator {
 			val members = structMembers.get(subName)
 			var current = struct
 			while(current != null) {
-				val superName = current.superType.name
-				subStructs.get(superName).add(subName)
 				for(StructMember member: current.members)	
 					members.add(member)
+					
+				val superName = current.name
+				subStructs.get(superName).add(subName)
+				
 				current = if(current.superType != null) structs.get(current.superType.name) else null
 			}
 		}
