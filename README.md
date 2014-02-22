@@ -1,10 +1,6 @@
-This document describes a DSL (domain specific language) for defining a JSON data schema. A schema contains definitions of types and interfaces (for remote procedure calls).
+JSON schema DSL is a domain specific language for defining a JSON data structures and remote procedure call interfaces.
 
-#Assumptions
-
-For simplicity "null" is equal to "undefined".
-
-TODO: overthink this
+I am often confronted with defining a protocol between client and server (over web sockets for example). These protocols do much work that can be automated like checking the types of incoming parameters and of outgoing return values. So I invented this language. You just define your required types and the interfaces your application needs, compile the schema to a coffee script, import it and just implement the client and server logic (without the need to check the types of your data). An [example](http://forum.openstoryboards.org/showthread.php?tid=1) is explained in my forum.
 
 #Language components
 
