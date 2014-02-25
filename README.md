@@ -37,7 +37,7 @@ typedef RenamedBoolean = boolean;
 struct Stats {
   isFile: boolean;
   isDirectory: RenamedBoolean;
-};
+}
 ```
 
 TODO: Shall I define constraints on booleans? It doesn't make sense to me.
@@ -48,15 +48,15 @@ The "string" type describe any character data inside of double quotes like `"abc
 
 You can constrain strings using a regular expression:
 ```
-typedef JustStrings = string;
-typedef Identifier = string /^[a-zA-Z_][a-zA-Z_0-9]*$/;
+typedef JustStrings = string
+typedef Identifier = string /^[a-zA-Z_][a-zA-Z_0-9]*$/
 #"abc123", "_1Aa", "lutscher"
 ```
 
 You can also constrain strings in their length:
 ```
-typedef ZipCode = string[5] /^\d+$/;          #exactly 5 characters
-typedef CountryCode = string[...3] /^[A-Z]+$/; #up to 3 characters
+typedef ZipCode = string[5] /^\d+$/           #exactly 5 characters
+typedef CountryCode = string[...3] /^[A-Z]+$/ #up to 3 characters
 ```
 
 ### Integers
@@ -66,11 +66,11 @@ This type defines integers like `0`, `123`, `-456`...
 It can be contrained with upper and lower bounds or with an enumeration of values.
 
 ```
-typedef JustIntegers = integer;            #all integers
-typedef NonPositiveInteger = integer[...0]; #.. -3, -2, -1, 0
-typedef NonNegativeInteger = integer[0...]; #0, 1, 2, 3, ..
-typedef PositiveInteger = integer(0...];    #1, 2, 3, .. Mind the round parethesis!
-typedef NegativeInteger = integer[...0);    #.. -3, -2, -1
+typedef JustIntegers = integer             #all integers
+typedef NonPositiveInteger = integer[...0] #.. -3, -2, -1, 0
+typedef NonNegativeInteger = integer[0...] #0, 1, 2, 3, ..
+typedef PositiveInteger = integer(0...]    #1, 2, 3, .. Mind the round parethesis!
+typedef NegativeInteger = integer[...0)    #.. -3, -2, -1
 ```
 
 ### Numbers
@@ -78,11 +78,11 @@ typedef NegativeInteger = integer[...0);    #.. -3, -2, -1
 This numeric type also includes floating point numbers. It has the same constraints syntax like the "integer" type. Upper and lower limit must be integers.
 
 ```
-typedef JustNumbers = number;                 #all numbers
-typedef PositiveFloat = number(0...];          #0.2, 3.14, 88.0 .. Mind the round parenthesis!
-typedef NegativeFloat = number[...0);          #-0.1, -2.25, -123.0 ..
-typedef NonPositiveFloat = number[...0];       #0, -0.1, -2.25, -123.0 ..
-typedef NonNegativeFloat = number[0...];       #0, 0.2, 3.75, 5864.33 ..
+typedef JustNumbers = number                  #all numbers
+typedef PositiveFloat = number(0...]          #0.2, 3.14, 88.0 .. Mind the round parenthesis!
+typedef NegativeFloat = number[...0)          #-0.1, -2.25, -123.0 ..
+typedef NonPositiveFloat = number[...0]       #0, -0.1, -2.25, -123.0 ..
+typedef NonNegativeFloat = number[0...]       #0, 0.2, 3.75, 5864.33 ..
 ```
 
 TODO: choose another name than "number" like "float", "real", "double".
@@ -101,18 +101,18 @@ enum Orientation {
 
 A list is a container type - it contains elements of a given type. A list of `Type` elements can be written as
 ```
-typedef CustomList = list of Type;
+typedef CustomList = list of Type
 ``` 
 
 Besides that you can constrain lists in its size:
 ```
-typedef FixedIntBlock = list[5] of integer;   #exactly 5 entries 
-typedef VarIntBlock = list[2...5] of integer; #2 to 5 entries
-typedef MinIntBlock = list(5...] of integer;  #6 and more entries, mind the round parenthesis!
-typedef UnboundedIntBlock = list of integer;  #list of any size
+typedef FixedIntBlock = list[5] of integer   #exactly 5 entries 
+typedef VarIntBlock = list[2...5] of integer #2 to 5 entries
+typedef MinIntBlock = list(5...] of integer  #6 and more entries, mind the round parenthesis!
+typedef UnboundedIntBlock = list of integer  #list of any size
 ```
 
-Values of `FixedIntBlock` could be `[1, 2, 3, 4, 5]` or [-1, 34, 71, -911, 0].
+Values of `FixedIntBlock` could be `[1, 2, 3, 4, 5]` or `[-1, 34, 71, -911, 0]`.
 
 ## Tuples
 
@@ -128,17 +128,17 @@ typedef Point = tuple of (integer, integer)
 A dictionary is also a container type - but of key-value-pairs. It needs a string type for the keys and any other type for the values:
 
 ```
-typedef Key = string /^[A-Z]$/; #any capital letter
-typedef Value = integer(100...200); #any integer between 100 and 200
+typedef Key = string /^[A-Z]$/      #any capital letter
+typedef Value = integer(100...200)  #any integer between 100 and 200
 typedef CustomDictionary = dictionary of Key => Value;
 ```
 
 You can also constrain a dictionary in its size:
 ```
-typedef UnboundedIntConstants = dictionary of Identifier => integer;        #dictionary of any size
-typedef VarIntConstants = dictionary[2...10] of Identifier => integer;       #2 to 10 entries
-typedef FixedIntConstants = dictionary[5] of Identifier => integer;         #exactly 5 entries
-typedef MaxIntConstants = dictionary[...5] of Identifier => integer;         #at most 5 entries
+typedef UnboundedIntConstants = dictionary of Identifier => integer        #dictionary of any size
+typedef VarIntConstants = dictionary[2...10] of Identifier => integer      #2 to 10 entries
+typedef FixedIntConstants = dictionary[5] of Identifier => integer         #exactly 5 entries
+typedef MaxIntConstants = dictionary[...5] of Identifier => integer        #at most 5 entries
 ```
 
 Values of `MaxIntConstants` could be `{}` or `{abc: 123, def: 456}`.
@@ -151,7 +151,7 @@ Struct types are mapped to JSON objects. Each object property can be defined wit
 struct Person {
 	name: string;
 	age: integer;
-};
+}
 
 ###
 allows values like 
@@ -172,12 +172,12 @@ Example:
 abstract struct Person {
 	name: string;
 	age: integer;
-};
+}
 
 struct Employee: Person {
 	personnelNumber: integer;
 	department: string;
-};
+}
 
 ###
 valid value for "Employee":
@@ -204,7 +204,7 @@ struct Node {
   content: integer;
   left: nullable Node;
   right: nullable Node;
-};
+}
 
 ###
 possible Node value:
