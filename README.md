@@ -1,6 +1,6 @@
 JSON schema DSL is a domain specific language for defining a JSON data structures and remote procedure call interfaces.
 
-I am often confronted with defining a protocol between client and server (over web sockets for example). These protocols do much work that can be automated like checking the types of incoming parameters and of outgoing return values. So I invented this language. You just define your required types and the interfaces your application needs, compile the schema to a coffee script, import it and just implement the client and server logic (without the need to check the types of your data). An [example](http://forum.openstoryboards.org/showthread.php?tid=1) is explained in my forum.
+I am often confronted with defining a protocol between client and server (over web sockets for example). These protocols do much work that can be automated like checking the types of incoming parameters and of outgoing return values. So I invented this language. You just define your required types and the interfaces your application needs, compile the schema to a coffee script, import it and just implement the client and server logic (without the need to check the types of your data). An example is explained [here](http://blog.openstoryboards.org/?p=9).
 
 #Language components
 
@@ -233,7 +233,7 @@ interface Main {
 
 ### Functions
 
-Functions are remote procedure calls of the client to the server. The client sends a set of parameters to the server, the server processes the request and sends an optional return value to the client.
+Functions are remote procedure calls of the client to the server. The client sends a set of parameters to the server, the server processes the request and sends an optional return value to the client. Parameters and result validation will be done automatically by the generated stubs.
 
 ### Events
 
