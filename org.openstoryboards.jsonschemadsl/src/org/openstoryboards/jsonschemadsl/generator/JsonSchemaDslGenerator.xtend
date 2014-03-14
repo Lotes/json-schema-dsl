@@ -492,6 +492,58 @@ class JsonSchemaDslGenerator implements IGenerator {
 		'''
 	}
 	
+	def compileForServer(EventMember event) {
+		val parameters = new LinkedList<String>(event.parameters.map[p|p.name]);
+		parameters.addFirst("socket");
+		'''
+		«event.name»: («parameters.join(", ")») =>
+			if(!(@send?))
+				throw new Error("Please implement function 'send(socket, object)'.")
+			if(arguments.length != «event.parameters.size + 1») 
+				throw new Error("Usage: event «event.name»(«parameters.join(", ")»)")
+			parameters = [«event.parameters.map[p|p.name].join(", ")»]
+			result = @eventHandlers["«event.name»"].validateParameters(parameters)
+			if(!result.ok())
+				throw new Error("Bad format at '"+result.errors[0].path+"': "+result.errors[0].message)
+			@send(socket, {
+				type: "eventCall",
+				eventName: "«event.name»",
+				parameters: parameters
+			})
+		'''
+	}
+	
+	def compileForClient(FunctionMember function) {
+		val parameters = new LinkedList<String>(function.parameters.map[p|p.name]);
+		parameters.addLast("callback");
+		'''
+		«function.name»: («parameters.join(", ")») =>
+			if(!(@send?))
+				throw new Error("Please implement function 'send(object)'.")
+			if(arguments.length != «function.parameters.size + 1» || typeof(arguments[«function.parameters.size»]) != "function") 
+				throw new Error("Usage: function «function.name»(«parameters.join(", ")»)")
+		
+			paramsList = []
+			«IF function.parameters.size > 0»
+			for i in [1..«function.parameters.size»]
+				paramsList.push(arguments[i-1])
+			«ENDIF»
+			
+			result = @functionHandlers["«function.name»"].validateParameters(paramsList)
+			if(!result.ok())
+				callback(new Error("Bad format at '"+result.errors[0].path+"': "+result.errors[0].message))
+			else
+				seqNo = @sequenceNumber++
+				@callbacks[seqNo] = arguments[«function.parameters.size»]
+				@send({
+					type: "functionCall",
+					sequenceNumber: seqNo,
+					functionName: "«function.name»",
+					parameters: paramsList
+				})
+		'''
+	}
+	
 	def compile(InterfaceDefinition definition) {
 		val name = definition.name
 		'''
@@ -518,50 +570,14 @@ class JsonSchemaDslGenerator implements IGenerator {
 			constructor: (implementations) ->
 				super(«name»EventHandlers, «name»FunctionHandlers, implementations)
 			«FOR event: definition.members.filter(EventMember)»
-			«event.name»: (socket, «event.parameters.map[p|p.name].join(", ")») =>
-				if(!(@send?))
-					throw new Error("Please implement function 'send(socket, object)'.")
-				if(arguments.length != «event.parameters.size + 1») 
-					throw new Error("Usage: event «event.name»(socket, «event.parameters.map[p|p.name].join(", ")»)")
-				parameters = [«event.parameters.map[p|p.name].join(", ")»]
-				result = @eventHandlers["«event.name»"].validateParameters(parameters)
-				if(!result.ok())
-					throw new Error("Bad format at '"+result.errors[0].path+"': "+result.errors[0].message)
-				@send(socket, {
-					type: "eventCall",
-					eventName: "«event.name»",
-					parameters: parameters
-				})
+			«event.compileForServer»
 			«ENDFOR»
 		
 		class «name»ClientStub extends ClientStub
 			constructor: (implementations) ->
 				super(«name»EventHandlers, «name»FunctionHandlers, implementations)
 			«FOR function: definition.members.filter(FunctionMember)»
-			«function.name»: («function.parameters.map[p|p.name].join(", ")», callback) =>
-				if(!(@send?))
-					throw new Error("Please implement function 'send(object)'.")
-				if(arguments.length != «function.parameters.size + 1» || typeof(arguments[«function.parameters.size»]) != "function") 
-					throw new Error("Usage: function «function.name»(«function.parameters.map[p|p.name].join(", ")», callback)")
-			
-				paramsList = []
-				«IF function.parameters.size > 0»
-				for i in [1..«function.parameters.size»]
-					paramsList.push(arguments[i-1])
-				«ENDIF»
-				
-				result = @functionHandlers["«function.name»"].validateParameters(paramsList)
-				if(!result.ok())
-					callback(new Error("Bad format at '"+result.errors[0].path+"': "+result.errors[0].message))
-				else
-					seqNo = @sequenceNumber++
-					@callbacks[seqNo] = arguments[«function.parameters.size»]
-					@send({
-						type: "functionCall",
-						sequenceNumber: seqNo,
-						functionName: "«function.name»",
-						parameters: paramsList
-					})
+			«function.compileForClient»
 			«ENDFOR»
 		
 		types.«name» = {
