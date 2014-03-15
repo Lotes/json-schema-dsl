@@ -31,7 +31,7 @@ import java.util.HashSet
 import java.util.Map
 
 class JsonSchemaDslGenerator implements IGenerator {	
-	private val typesModuleName = "JsonSchemaTypes.generated"
+	private val typesModuleName = "JsonSchemaTypes"
 	private val typesModuleFileName = typesModuleName + ".coffee"
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
@@ -62,18 +62,18 @@ class JsonSchemaDslGenerator implements IGenerator {
 	class ValidationResult
 		constructor: ->
 			@errors = []
-		ok: => !@hasErrors()
-		hasErrors: => @errors.length > 0
-		addError: (path, message) => 
+		ok: -> !@hasErrors()
+		hasErrors: -> @errors.length > 0
+		addError: (path, message) -> 
 			@errors.push(new ValidationError(path, message))
-		addResult: (result) =>
+		addResult: (result) ->
 			for error in result.errors
 				@errors.push(error)
 	
 	#constraints
 	class RegexConstraint
 		constructor: (@regex) ->
-		validate: (str, path) =>
+		validate: (str, path) ->
 			result = new ValidationResult()
 			if(!@regex.test(str))
 				result.addError(path, "String '"+str+"' does not match regular expression constraint.")
@@ -82,7 +82,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class IntervalConstraint
 		constructor: (@openLeft, @openRight, @from, @to) ->
-		validate: (value, path) =>
+		validate: (value, path) ->
 			result = new ValidationResult()
 			if(@from?)
 				if(@openLeft)
@@ -103,12 +103,12 @@ class JsonSchemaDslGenerator implements IGenerator {
 	#base class
 	class Type
 		constructor: ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 
 	#basic types
 	class BooleanType extends Type
 		constructor: ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(typeof(object) != "boolean")
 				result.addError(path, "Value is not a boolean as required.");
@@ -116,35 +116,34 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class AnyType extends Type
 		constructor: ->
-		validate: (object, path) => #no error possible, every value is allowed
+		validate: (object, path) -> #no error possible, every value is allowed
 			new ValidationResult()
 
 	class NullType extends Type
 		constructor: ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(object != null)
 				result.addError(path, "Value is not null as required.")
 			result
 	
 	class EnumerationType extends Type
-		maxValue: 0
 		constructor: (values) -> 
 			index = 0
-			maxValue = values.length
+			@maxValue = values.length
 			for value in values
 				this[value] = index++
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(typeof(object) != "number" || Math.floor(object) != object)
 				result.addError(path, "Value is not an integer as required.")
-			else if(object < 0 || object >= maxValue)
-				result.addError(path, "Enumeration value lies not in interval [0, "+maxValue+").")
+			else if(object < 0 || object >= @maxValue)
+				result.addError(path, "Enumeration value lies not in interval [0, "+@maxValue+").")
 			result
 
 	class NumberType extends Type
 		constructor: (@constraint) -> 
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(typeof(object) != "number")
 				result.addError(path, "Value is not numeric as required.")
@@ -155,7 +154,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 	class IntegerType extends NumberType
 		constructor: (constraint) -> 
 			super(constraint)
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			result.addResult(super(object, path)) 
 			if(!result.hasErrors() && Math.floor(object) != object)
@@ -164,7 +163,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class StringType extends Type
 		constructor: (@sizeConstraint, @regexConstraint) ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(typeof(object) != "string")
 				result.addError(path, "Value is not a string as required.")
@@ -177,7 +176,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 	#composite types
 	class NullableType extends Type
 		constructor: (@type) ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(object != null)
 				result.addResult(@type.validate(object, path))
@@ -185,7 +184,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class DictionaryType extends Type
 		constructor: (@keyType, @valueType, @sizeConstraint) ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(typeof(object)!="object")
 				result.addError(path, "Value is not an object as required.")
@@ -201,7 +200,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class ListType extends Type
 		constructor: (@elementType, @sizeConstraint) ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(!Array.isArray(object))
 				result.addError(path, "Value is not an array as required.");
@@ -214,7 +213,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class TupleType extends Type
 		constructor: (@tupleTypes) ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(!Array.isArray(object))
 				result.addError(path, "Value is not an array as required.")
@@ -230,7 +229,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class StructType extends Type		
 		constructor: (@name, @isAbstract, @members, @subStructs) ->
-		validate: (object, path) =>
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(typeof(object) != "object")
 				result.addError(path, "Value is not an object as required.")
@@ -253,8 +252,8 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class ProxyType extends Type
 		constructor: -> @type = null
-		setType: (@type) =>
-		validate: (object, path) =>
+		setType: (@type) ->
+		validate: (object, path) ->
 			result = new ValidationResult()
 			if(@type == null)
 				result.addError(path, "No type assigned to proxy.")
@@ -264,7 +263,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 
 	class EventHandler
 		constructor: (@name, @parameters) ->
-		validateParameters: (parameters) =>
+		validateParameters: (parameters) ->
 			result = new ValidationResult()
 			index = 0
 			for name, type of @parameters
@@ -272,7 +271,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 				result.addResult(type.validate(value, @name+"()#parameter"+index))
 				index++
 			result
-		run: (implementation, object, parameters) =>
+		run: (implementation, object, parameters) ->
 			if(implementation?)
 				implementation.apply(object, parameters)
 			else
@@ -281,9 +280,12 @@ class JsonSchemaDslGenerator implements IGenerator {
 	class FunctionHandler extends EventHandler
 		constructor: (name, parameters, @returnType) ->
 			super(name, parameters)
-		validateReturnValue: (returnValue) =>
-			@returnType.validate(returnValue, @name+"()#returnValue")
-		run: (implementation, object, parameters) =>
+		validateReturnValue: (returnValue) ->
+			if(@returnType == null)
+				new ValidationResult()
+			else
+				@returnType.validate(returnValue, @name+"()#returnValue")
+		run: (implementation, object, parameters) ->
 			if(implementation?)
 				implementation.apply(object, parameters)
 			else
@@ -296,7 +298,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 	class ServerStub extends Stub
 		constructor: (events, functions, implementations) ->
 			super(events, functions, implementations)
-		receive: (socket, obj) =>
+		receive: (socket, obj) ->
 			if(!(@send?))
 				throw new Error("Please implement function send(socketId, object).")
 			try
@@ -352,7 +354,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 			super(events, functions, implementations)
 			@callbacks = {}
 			@sequenceNumber = 0
-		receive: (obj) =>
+		receive: (obj) ->
 			try
 				switch obj.type
 					when "functionError"
@@ -496,7 +498,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		val parameters = new LinkedList<String>(event.parameters.map[p|p.name]);
 		parameters.addFirst("socket");
 		'''
-		«event.name»: («parameters.join(", ")») =>
+		«event.name»: («parameters.join(", ")») ->
 			if(!(@send?))
 				throw new Error("Please implement function 'send(socket, object)'.")
 			if(arguments.length != «event.parameters.size + 1») 
@@ -517,7 +519,7 @@ class JsonSchemaDslGenerator implements IGenerator {
 		val parameters = new LinkedList<String>(function.parameters.map[p|p.name]);
 		parameters.addLast("callback");
 		'''
-		«function.name»: («parameters.join(", ")») =>
+		«function.name»: («parameters.join(", ")») ->
 			if(!(@send?))
 				throw new Error("Please implement function 'send(object)'.")
 			if(arguments.length != «function.parameters.size + 1» || typeof(arguments[«function.parameters.size»]) != "function") 
@@ -600,8 +602,8 @@ class JsonSchemaDslGenerator implements IGenerator {
 			return "null"
 		val openLeft = constraint.left.bracket.equals("(")
 		val openRight = constraint.right.bracket.equals(")")
-		val from = if(constraint.from != null) constraint.from.value else null
-		val to = if(constraint.to != null) constraint.to.value else null
+		val from = if(constraint.from != null) constraint.from.value else "null"
+		val to = if(constraint.to != null) constraint.to.value else "null"
 		'''new IntervalConstraint(«openLeft», «openRight», «from», «to»)'''
 	}
 	
